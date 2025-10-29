@@ -1,0 +1,28 @@
+{
+  "name": "flowershop3",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FlowerShop - Next.js + Strapi e-commerce",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"yarn dev:backend\" \"yarn dev:frontend\"",
+    "dev:backend": "cd backend && yarn dev",
+    "dev:frontend": "cd frontend && yarn dev",
+    "build": "yarn build:backend && yarn build:frontend",
+    "build:backend": "cd backend && yarn build",
+    "build:frontend": "cd frontend && yarn build",
+    "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\"",
+    "start:backend": "cd backend && yarn start",
+    "start:frontend": "cd frontend && yarn start",
+    "install:all": "yarn install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "strapi-plugin-import-export-content": "^0.4.2"
+  }
+}

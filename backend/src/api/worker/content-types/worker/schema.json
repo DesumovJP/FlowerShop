@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "workers",
+  "info": {
+    "singularName": "worker",
+    "pluralName": "workers",
+    "displayName": "Worker"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "role": {
+      "type": "enumeration",
+      "required": true,
+      "enum": [
+        "Administrator",
+        "Florist"
+      ]
+    },
+    "phone": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "shift_reports": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::shift-report.shift-report",
+      "mappedBy": "worker"
+    }
+  }
+}

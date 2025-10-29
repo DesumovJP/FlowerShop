@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F8F9FA; /* М'який сіро-білий фон */
+  --foreground: #1A1A1A; /* М'який чорний текст */
+  
+  /* Морфізм кольори */
+  --morphism-bg: #F8F9FA;
+  --morphism-shadow-light: rgba(255, 255, 255, 0.7);
+  --morphism-shadow-dark: rgba(0, 0, 0, 0.1);
+  --morphism-border: rgba(255, 255, 255, 0.2);
+  
+  /* Градієнти для морфізму */
+  --gradient-primary: linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%);
+  --gradient-secondary: linear-gradient(135deg, #A5D6A7 0%, #C8E6C9 100%);
+  --gradient-surface: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+}
+
+/* Prevent horizontal scroll and layout shift */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Prevent layout shift when scrollbar appears/disappears */
+html {
+  overflow-y: scroll; /* Always show vertical scrollbar */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 48rem) {
+  .MuiTableContainer-root {
+    overflow-x: hidden !important;
+  }
+  
+  .MuiTable-root {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-poppins);
+  --font-serif: var(--font-poppins);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0D4F14; /* Ще темніший зелений фон для темної теми */
+    --foreground: #A5D6A7; /* Темніший світло-зелений текст */
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Морфізм утилітарні класи */
+.morphism-card {
+  background: var(--morphism-bg);
+  border-radius: 16px;
+  box-shadow: 
+    8px 8px 16px var(--morphism-shadow-dark),
+    -8px -8px 16px var(--morphism-shadow-light);
+  border: 1px solid var(--morphism-border);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.morphism-card:hover {
+  box-shadow: 
+    12px 12px 24px var(--morphism-shadow-dark),
+    -12px -12px 24px var(--morphism-shadow-light);
+  transform: translateY(-2px);
+}
+
+.morphism-button {
+  background: var(--gradient-surface);
+  border-radius: 12px;
+  box-shadow: 
+    4px 4px 8px var(--morphism-shadow-dark),
+    -4px -4px 8px var(--morphism-shadow-light);
+  border: 1px solid var(--morphism-border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.morphism-button:hover {
+  box-shadow: 
+    6px 6px 12px var(--morphism-shadow-dark),
+    -6px -6px 12px var(--morphism-shadow-light);
+  transform: translateY(-1px);
+}
+
+.morphism-button:active {
+  box-shadow: 
+    2px 2px 4px var(--morphism-shadow-dark),
+    -2px -2px 4px var(--morphism-shadow-light);
+  transform: translateY(0);
+}
+
+.morphism-input {
+  background: var(--gradient-surface);
+  border-radius: 12px;
+  box-shadow: 
+    inset 2px 2px 4px var(--morphism-shadow-dark),
+    inset -2px -2px 4px var(--morphism-shadow-light);
+  border: 1px solid var(--morphism-border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.morphism-input:focus {
+  box-shadow: 
+    inset 3px 3px 6px var(--morphism-shadow-dark),
+    inset -3px -3px 6px var(--morphism-shadow-light),
+    0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+/* Глассморфізм для сайдбару */
+.glass-sidebar {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Плавні анімації */
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Градієнтні кнопки */
+.gradient-primary {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
+}
+
+.gradient-primary:hover {
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+  transform: translateY(-1px);
+}
+
+.gradient-secondary {
+  background: var(--gradient-secondary);
+  color: #1B5E20;
+  border: none;
+  box-shadow: 0 4px 15px rgba(165, 214, 167, 0.3);
+}
+
+.gradient-secondary:hover {
+  box-shadow: 0 6px 20px rgba(165, 214, 167, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Product Card Hover Effect */
+.product-card-hover {
+  transition: box-shadow 0.4s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card-hover:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.product-card-hover:hover .hover-overlay {
+  opacity: 1;
+}
+
+.product-card-hover .MuiCardMedia-root {
+  overflow: hidden;
+}
+
+.product-card-hover:hover .MuiCardMedia-root img {
+  transform: scale(1.05);
+}
+
+.product-card-hover .MuiCardMedia-root img {
+  transition: transform 0.5s ease-out;
+}
+
+.hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+  z-index: 10;
+  border-radius: inherit;
+}
+
+.hover-text {
+  color: white;
+  font-weight: 600;
+  font-family: var(--font-poppins), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 1rem;
+}
+
+.hover-text-large {
+  font-size: 1.2rem;
+}
+
+@media (min-width: 600px) {
+  .hover-text {
+    font-size: 1.1rem;
+  }
+  
+  .hover-text-large {
+    font-size: 1.4rem;
+  }
+}
+
+/* Calendar specific styles */
+.calendar-day {
+  position: relative !important;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+}
+
+.calendar-day:hover {
+  z-index: 20 !important;
+}
+
+.calendar-day * {
+  pointer-events: none !important;
+}
+
+.calendar-day button {
+  pointer-events: auto !important;
+}
+
+/* Fix Material-UI Select dropdown layout shift */
+.MuiSelect-select {
+  padding-right: 32px !important;
+}
+
+.MuiSelect-icon {
+  right: 7px !important;
+}
+
+/* Ensure consistent scrollbar behavior */
+.MuiMenu-paper {
+  max-height: calc(100vh - 32px) !important;
+  overflow-y: auto !important;
+}
+
+/* Prevent body scroll when dropdown is open */
+body.MuiModal-open {
+  overflow: hidden !important;
+}

@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "shift_reports",
+  "info": {
+    "singularName": "shift-report",
+    "pluralName": "shift-reports",
+    "displayName": "ShiftReport"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "date",
+      "required": true,
+      "unique": true
+    },
+    "worker": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::worker.worker",
+      "inversedBy": "shift_reports"
+    },
+    "shiftComment": {
+      "type": "text"
+    },
+    "cash": {
+      "type": "decimal",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "required": true,
+      "default": "{{date}}"
+    },
+    "itemsSnapshot": {
+      "type": "json"
+    }
+  }
+}

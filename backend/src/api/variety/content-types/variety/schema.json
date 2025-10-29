@@ -1,0 +1,31 @@
+{
+  "kind": "collectionType",
+  "collectionName": "varieties",
+  "info": {
+    "singularName": "variety",
+    "pluralName": "varieties",
+    "displayName": "variety"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name"
+    },
+    "description": {
+      "type": "blocks"
+    },
+    "products": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::product.product",
+      "mappedBy": "varieties"
+    }
+  }
+}

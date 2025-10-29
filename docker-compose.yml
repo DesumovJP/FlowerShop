@@ -1,0 +1,26 @@
+
+services:
+  strapi:
+    build: .
+    container_name: flowershop3-strapi
+    ports:
+      - "1337:1337"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_CLIENT=sqlite
+      - DATABASE_FILENAME=/app/backend/data/data.db
+      - JWT_SECRET=your-jwt-secret-here
+      - ADMIN_JWT_SECRET=your-admin-jwt-secret-here
+      - APP_KEYS=your-app-keys-here
+      - API_TOKEN_SALT=your-api-token-salt-here
+      - TRANSFER_TOKEN_SALT=your-transfer-token-salt-here
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/public/uploads:/app/backend/public/uploads
+    restart: unless-stopped
+    networks:
+      - flowershop-network
+
+networks:
+  flowershop-network:
+    driver: bridge
