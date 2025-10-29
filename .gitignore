@@ -18,10 +18,11 @@ out/
 .env.test.local
 .env.production.local
 
-# Database
-*.db
+# Database (except main data.db)
 *.sqlite
 *.sqlite3
+# Keep main database for development
+!backend/data/data.db
 
 # Logs
 logs
