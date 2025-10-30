@@ -2,7 +2,7 @@
 
 import { append } from '../../utils/recentActivities.store';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -173,7 +173,7 @@ function ProductFormDialog({
     };
 
     const cardTypeMapping: Record<string, string> = {
-      'standard': 'standart',
+      'standard': 'standard',
       'large': 'large'
     };
 
@@ -416,10 +416,11 @@ function ProductFormDialog({
           hasVarieties: (product?.varieties?.length || 0) > 0 
         });
         
-        // Використовуємо єдиний API endpoint для всіх продуктів
-        const apiEndpoint = '/api/products';
+        // Створення або оновлення
+        const isEdit = !!product?.documentId;
+        const apiEndpoint = isEdit ? `/api/products/${product!.documentId}` : '/api/products';
         
-        // Підготовка payload для єдиної Product колекції
+        // Підготовка payload для Product колекції (без documentId у тілі)
         const jsonPayload = {
           name: transliteratedData.name,
           slug: transliteratedData.slug,
@@ -430,14 +431,13 @@ function ProductFormDialog({
           cardType: transliteratedData.cardType,
           productType: productType,
           varieties: productType === 'bouquet' ? transliteratedData.varieties : [],
-          ...(product && { documentId: product.documentId })
         };
         
         console.log('Frontend: Sending JSON payload to:', apiEndpoint, jsonPayload);
         console.log('Price type and value:', typeof jsonPayload.price, jsonPayload.price);
 
         const response = await fetch(apiEndpoint, {
-          method: 'POST',
+          method: isEdit ? 'PUT' : 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -697,10 +697,7 @@ function ProductFormDialog({
         </Box>
       </DialogTitle>
       
-      <DialogContent sx={{ 
-        p: 0,
-        overflow: 'hidden',
-      }}>
+      <DialogContent sx={{ p: 0, overflow: 'hidden', position: 'relative' }}>
         <Box sx={{ 
           p: 3,
           overflow: 'auto',
@@ -851,19 +848,14 @@ function ProductFormDialog({
               
               {/* Колекції видалені з нової структури Product */}
               
-              <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}>
-                <InputLabel>Тип продукту</InputLabel>
-                <Select
-                  value={formData.productType}
-                  label="Тип продукту"
-                  onChange={handleChange('productType')}
-                >
-                  <MenuItem value="bouquet">Букет</MenuItem>
-                  <MenuItem value="singleflower">Квітка</MenuItem>
-                  <MenuItem value="composition" disabled>Композиції (скоро)</MenuItem>
-                  <MenuItem value="accessory" disabled>Супутні товари (скоро)</MenuItem>
-                </Select>
-              </FormControl>
+              {/* Тип продукту не редагується: показуємо readOnly поле */}
+              <TextField
+                fullWidth
+                label="Тип продукту"
+                value={formData.productType === 'bouquet' ? 'Букет' : 'Квітка'}
+                InputProps={{ readOnly: true }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+              />
               
               <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}>
                 <InputLabel>Розмір картки</InputLabel>
@@ -1201,6 +1193,10 @@ function ProductFormDialog({
                     </Box>
           </Box>
         </Box>
+        {/* Сірий оверлей: В розробці */}
+        <Box sx={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'text.secondary' }}>
+          В розробці
+        </Box>
       </DialogContent>
       
       <DialogActions sx={{ 
@@ -1214,7 +1210,7 @@ function ProductFormDialog({
       }}>
         <Button 
           onClick={onClose} 
-          disabled={isSubmitting}
+          disabled
           sx={{
             color: '#666',
             fontWeight: 600,
@@ -1240,11 +1236,7 @@ function ProductFormDialog({
           Скасувати
         </Button>
         <Button 
-          onClick={() => {
-            console.log('Save button clicked');
-            handleSubmit();
-          }} 
-          disabled={isSubmitting}
+          disabled
           sx={{
             background: product 
               ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' 
@@ -1738,6 +1730,8 @@ export default function ProductsPage() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  // Єдине джерело правди для тривалості, щоб анімація й закриття збігалися
+  const SNACKBAR_DURATION_MS = 4000;
 
   // Fetch varieties
   const fetchVarieties = async () => {
@@ -1747,6 +1741,7 @@ export default function ProductsPage() {
       
       if (response.ok) {
         setVarieties(data.data || []);
+        try { router.refresh(); } catch {}
       }
     } catch (error) {
       console.error('Error fetching varieties:', error);
@@ -1783,12 +1778,16 @@ export default function ProductsPage() {
       // Підтримка латинської транслітерації, що зберігається у Product
       'chervonij': 'Червоний',
       'rozhevyj': 'Рожевий',
+      'rozhevij': 'Рожевий',
       'bilyj': 'Білий',
       'zhyovtyj': 'Жовтий',
+      'zhovtyj': 'Жовтий',
       'fioletovij': 'Фіолетовий',
       'synij': 'Синій',
       'golubyj': 'Голубий',
-      'oranzhevyj': 'Помаранчевий'
+      'oranzhevyj': 'Помаранчевий',
+      'pomaranchevyj': 'Помаранчевий',
+      'zelenyj': 'Зелений'
     };
 
     const selectedTypeCode = (Object.keys(typeLabels) as Array<keyof typeof typeLabels>).find(
@@ -1817,6 +1816,15 @@ export default function ProductsPage() {
       return matchesSearch && matchesType && matchesColor && matchesVariety;
     });
   }, [products, searchTerm, filterProductType, filterColor, filterVariety]);
+
+  const toUkrainianColor = useCallback((c: string | undefined) => {
+    if (!c) return '-';
+    const map: Record<string, string> = {
+      red: 'Червоний', pink: 'Рожевий', white: 'Білий', yellow: 'Жовтий', purple: 'Фіолетовий', blue: 'Синій', green: 'Зелений', orange: 'Оранжевий', cream: 'Кремовий', peach: 'Персиковий',
+      chervonij: 'Червоний', rozhevyj: 'Рожевий', rozhevij: 'Рожевий', bilyj: 'Білий', zhyovtyj: 'Жовтий', zhovtyj: 'Жовтий', fioletovij: 'Фіолетовий', synij: 'Синій', golubyj: 'Голубий', oranzhevyj: 'Помаранчевий', pomaranchevyj: 'Помаранчевий', zelenyj: 'Зелений'
+    };
+    return map[c] || c;
+  }, []);
 
   const handleAddProduct = () => {
     setSelectedProduct(undefined);
@@ -1953,6 +1961,7 @@ export default function ProductsPage() {
         } catch {}
 
         await fetchProducts();
+        try { router.refresh(); } catch {}
         try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
         showNotification('Списання виконано', 'success');
         return;
@@ -2030,6 +2039,7 @@ export default function ProductsPage() {
               console.error('Failed to log write-off activity:', e);
             }
             await fetchProducts();
+            try { router.refresh(); } catch {}
             try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
             showNotification('Товар успішно видалено', 'success');
             return;
@@ -2080,6 +2090,7 @@ export default function ProductsPage() {
             console.error('Failed to log write-off activity:', e);
           }
           await fetchProducts();
+          try { router.refresh(); } catch {}
           try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
           showNotification('Товар успішно видалено', 'success');
           return;
@@ -2098,6 +2109,7 @@ export default function ProductsPage() {
     try {
       invalidateCache();
       await refreshProducts(); // Refresh the list
+      try { router.refresh(); } catch {}
       try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
       // Log to recent activities
       try {
@@ -2138,6 +2150,7 @@ export default function ProductsPage() {
       await fetchVarieties(); // Refresh the list
       invalidateCache();
       await refreshProducts();
+      try { router.refresh(); } catch {}
       try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
       // Log to recent activities
       try {
@@ -2847,7 +2860,7 @@ export default function ProductsPage() {
                         </Grid>
                         <Grid size={{ xs: 12 }}>
                           <Chip
-                            label={product.color || 'Не вказано'}
+                            label={toUkrainianColor(product.color) || 'Не вказано'}
                             size="small"
                             sx={{
                               backgroundColor: theme.palette.secondary.light,
@@ -2983,7 +2996,7 @@ export default function ProductsPage() {
                       <Grid container spacing={0.5} justifyContent="center">
                         <Grid size={{ xs: 12 }}>
                           <Chip
-                            label={product.color || '-'}
+                            label={toUkrainianColor(product.color) || '-'}
                             size="small"
                             sx={{
                               backgroundColor: 'transparent',
@@ -3226,15 +3239,75 @@ export default function ProductsPage() {
       {/* Snackbar for notifications */}
         <Snackbar
           open={snackbarOpen}
-          autoHideDuration={6000}
+          autoHideDuration={SNACKBAR_DURATION_MS}
           onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          sx={{
+            '& .MuiPaper-root': {
+              maxWidth: 1000,
+              width: 'calc(100% - 32px)'
+            },
+            // expose duration to children via css var
+            '--fs-duration': `${SNACKBAR_DURATION_MS}ms`,
+          }}
         >
           <Alert
             onClose={() => setSnackbarOpen(false)}
             severity={snackbarSeverity}
-            sx={{ width: '100%' }}
+            sx={{
+              width: '100%',
+              fontSize: '1rem',
+              px: 2,
+              py: 1,
+              minHeight: 56,
+              borderRadius: 1.5,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              position: 'relative',
+              overflow: 'hidden',
+              '& .MuiAlert-icon': { fontSize: '1.25rem', mr: 1 },
+              '& .MuiAlert-message': {
+                flex: 1,
+                textAlign: 'center',
+                fontWeight: 600,
+                lineHeight: 1.2,
+              },
+            }}
           >
             {snackbarMessage}
+            {/* Bottom progress bar timer (10s) */}
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 16,
+                right: 16,
+                bottom: 8,
+                height: 3,
+                borderRadius: 999,
+                overflow: 'hidden',
+                bgcolor: 'rgba(255,255,255,0.35)',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: 0,
+                  bgcolor: 'currentColor',
+                  opacity: 0.7,
+                  animationName: snackbarOpen ? 'fsTimer' : 'none',
+                  animationTimingFunction: 'linear',
+                  animationFillMode: 'forwards',
+                  animationDuration: 'var(--fs-duration)'
+                },
+                '@keyframes fsTimer': {
+                  from: { width: 0 },
+                  to: { width: '100%' },
+                },
+              }}
+            />
           </Alert>
         </Snackbar>
         </>

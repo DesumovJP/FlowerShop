@@ -62,22 +62,25 @@ export default function ProductCard({ product }: ProductCardProps) {
     gridTemplateRows: '1fr auto',
     overflow: 'hidden',
     cursor: 'pointer',
-    // Large картки мають особливий фон
+    borderRadius: 0,
+    // Minimal shadow for standard cards so large stands out
+    ...(isLarge
+      ? {}
+      : {
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          backgroundColor: 'transparent',
+        }),
+    // Стиль для large: зелений фон + м'який зелений шедоу
     ...(isLarge && {
       background: 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 50%, #A5D6A7 100%)',
-      '& .MuiCardContent-root': {
-        color: 'white',
-      },
-      '& .MuiTypography-root': {
-        color: 'white',
-      },
+      boxShadow: '0 18px 44px rgba(46,125,50,0.28)',
     }),
   };
 
   const mediaSx = {
     width: '100%',
     height: '100%',
-    background: product.gradient || 'linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 50%, #F5F5F5 100%)',
+    // background moved to global class
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -108,7 +111,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       className="product-card-hover"
       sx={cardSx}
     >
-      <CardMedia sx={mediaSx}>
+      <CardMedia sx={{ ...mediaSx, borderRadius: 0 }} className="glass-media glass-card">
         {product.image?.[0]?.url ? (
           <Image
             src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${product.image[0].url}`}
@@ -163,11 +166,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
         
         {/* Hover Overlay */}
-        <div className="hover-overlay">
+        <Box className="hover-overlay" sx={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
           <span className={`hover-text ${isLarge ? 'hover-text-large' : ''}`}>
             Дивитися
           </span>
-        </div>
+        </Box>
       </CardMedia>
       <CardContent
         sx={{
@@ -175,7 +178,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           display: 'flex',
           flexDirection: 'column',
           gap: 0.5,
+          borderRadius: 0,
         }}
+        className="glass-card"
       >
         <Typography
           variant={isLarge ? 'h5' : 'subtitle1'}
@@ -184,7 +189,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             fontWeight: 600,
             mb: 0.25,
             fontFamily: 'var(--font-playfair)',
-            color: isLarge ? 'white' : 'text.primary',
+            color: isLarge ? '#FFFFFF' : 'text.primary',
+            textShadow: isLarge ? '0 2px 6px rgba(0,0,0,0.35)' : 'none',
             fontSize: isLarge ? { xs: '1.2rem', sm: '1.4rem' } : { xs: '0.95rem', sm: '1rem' },
           }}
         >
@@ -194,7 +200,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           variant="h6"
           sx={{
             fontWeight: 700,
-            color: isLarge ? 'white' : 'primary.main',
+            color: isLarge ? '#FFFFFF' : 'primary.main',
+            textShadow: isLarge ? '0 2px 8px rgba(0,0,0,0.4)' : 'none',
             fontFamily: 'var(--font-inter)',
             fontSize: isLarge ? { xs: '1.3rem', sm: '1.5rem' } : { xs: '1.1rem', sm: '1.2rem' },
           }}

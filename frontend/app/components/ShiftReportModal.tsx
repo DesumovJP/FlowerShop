@@ -17,10 +17,10 @@ import {
   Divider,
   IconButton,
   Alert,
-  CircularProgress,
   TextField,
   MenuItem,
 } from '@mui/material';
+import FlowerSpinner from './FlowerSpinner';
 import {
   Close as CloseIcon,
   Edit as EditIcon,
@@ -28,6 +28,7 @@ import {
   Save as SaveIcon,
 } from '@mui/icons-material';
 import ShiftReportForm from './ShiftReportForm';
+import RecentActivitiesTable from './RecentActivitiesTable';
 import { aggregate, calculateTotalSales, clear as clearRecentActivities, read as readRecentActivities } from '../utils/recentActivities.store';
 
 interface Worker {
@@ -615,7 +616,8 @@ export default function ShiftReportModal({
         items: itemsSnapshotArray,
         ordersCount,
         cashSales: totalCashSales,
-        cardSales: totalCardSales
+        cardSales: totalCardSales,
+        recentActivities
       };
 
       console.log('📦 itemsSnapshot to save:', itemsSnapshot);
@@ -798,7 +800,8 @@ export default function ShiftReportModal({
         items: itemsSnapshotArray,
         ordersCount,
         cashSales: totalCashSales,
-        cardSales: totalCardSales
+        cardSales: totalCardSales,
+        recentActivities
       };
 
       console.log('📦 itemsSnapshot after building:', itemsSnapshot);
@@ -1177,49 +1180,103 @@ export default function ShiftReportModal({
               </Typography>
               
               <Grid container spacing={3}>
-                {/* Ліва колонка 35%: Робітник + Каса */}
+                {/* Ліва колонка 35%: Дата + Робітник + Каса */}
                 <Grid size={{ xs: 12, md: 4 }}>
+                  {/* Дата зміни */}
+                  <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                    Дата зміни
+                  </Typography>
+                  <Typography variant="h6" gutterBottom>
+                    {formatDate(report.date)}
+                  </Typography>
                   <Typography variant="subtitle1" color="textSecondary" gutterBottom>
                     Робітник
                   </Typography>
-                  <Typography variant="h6" gutterBottom>
-                    {report.worker?.name || 'Без робітника'} ({report.worker?.role || 'Невідома роль'})
-                  </Typography>
+                  {(() => {
+                    const workerName = report.worker?.name || 'Без робітника';
+                    const r: any = report || {};
+                    const workerId = r?.worker?.id;
+                    const workerSlug = r?.worker?.slug || r?.workerSlug;
+                    const fromReport = r?.worker?.role || r?.worker?.roleName || r?.worker?.role?.name;
+                    const byId = workerId ? workers.find(w => w.id === workerId)?.role : undefined;
+                    const bySlug = workerSlug ? workers.find(w => w.slug === workerSlug)?.role : undefined;
+                    const byName = r?.worker?.name ? workers.find(w => w.name === r.worker.name)?.role : undefined;
+                    const role = fromReport || byId || bySlug || byName || 'Невідома роль';
+                    return (
+                      <Typography variant="h6" gutterBottom>
+                        {workerName} ({role})
+                      </Typography>
+                    );
+                  })()}
 
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="subtitle1" color="textSecondary" gutterBottom>
                       Каса
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                      <Chip
-                        label={`${report.cash}₴`}
-                        color="success"
-                        icon={<SaveIcon />}
-                        sx={{ fontSize: '1.1rem', py: 2, px: 1, color: '#000' }}
-                      />
-                      <Typography variant="body2" color="textSecondary">
-                        (
-                        Готівка: {typeof (report as any).cashCash === 'number' ? `${(report as any).cashCash}₴` : '—'},
-                        {' '}
-                        Картка: {typeof (report as any).cashCard === 'number' ? `${(report as any).cashCard}₴` : '—'}
-                        )
-                      </Typography>
-                    </Box>
+                    <Typography variant="h6" sx={{ 
+                      p: 2, 
+                      bgcolor: 'success.light', 
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: 'success.main',
+                      color: '#000',
+                      fontWeight: 'bold'
+                    }}>
+                      {report.cash}₴
+                    </Typography>
+                    {(() => {
+                      const snapshot: any = report.itemsSnapshot || {};
+                      const cashSales = typeof snapshot?.cashSales === 'number' ? snapshot.cashSales : undefined;
+                      const cardSales = typeof snapshot?.cardSales === 'number' ? snapshot.cardSales : undefined;
+                      const cashVal = typeof (report as any).cashCash === 'number' ? (report as any).cashCash : cashSales;
+                      const cardVal = typeof (report as any).cashCard === 'number' ? (report as any).cashCard : cardSales;
+                      return (
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                          (
+                          Готівка: {typeof cashVal === 'number' ? `${cashVal}₴` : '—'}, Картка: {typeof cardVal === 'number' ? `${cardVal}₴` : '—'}
+                          )
+                        </Typography>
+                      );
+                    })()}
+                    <Typography variant="caption" color="textSecondary">
+                      (автоматично з продажів)
+                    </Typography>
+                  
                     <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="subtitle2" color="textSecondary">
                         Списано:
                       </Typography>
-                      <Typography variant="subtitle2">
-                        {typeof (report as any).writeOffAmount === 'number'
-                          ? `${(report as any).writeOffAmount}₴`
-                          : typeof (report as any).writeOffSum === 'number'
-                            ? `${(report as any).writeOffSum}₴`
-                            : typeof (report as any).writeOffTotal === 'number'
-                              ? `${(report as any).writeOffTotal}₴`
-                              : '—'}
-                      </Typography>
+                      {(() => {
+                        const items = Array.isArray((report as any)?.itemsSnapshot?.items)
+                          ? (report as any).itemsSnapshot.items : getItemsFromSnapshot(report.itemsSnapshot);
+                        const writeOffCalculated = Array.isArray(items)
+                          ? items.reduce((sum: number, it: any) => sum + ((it.writtenOff || 0) * (it.price || 0)), 0)
+                          : 0;
+                        const writeOffVal =
+                          typeof (report as any).writeOffAmount === 'number' ? (report as any).writeOffAmount :
+                          typeof (report as any).writeOffSum === 'number' ? (report as any).writeOffSum :
+                          typeof (report as any).writeOffTotal === 'number' ? (report as any).writeOffTotal :
+                          (writeOffCalculated || undefined);
+                        return (
+                          <Typography variant="subtitle2">
+                            {typeof writeOffVal === 'number' ? `${writeOffVal}₴` : '—'}
+                          </Typography>
+                        );
+                      })()}
                     </Box>
                   </Box>
+
+                  {/* Коментар до зміни — відображення під касою у режимі перегляду */}
+                  {typeof (report as any)?.shiftComment === 'string' && (report as any).shiftComment.trim().length > 0 && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                        Коментар до зміни
+                      </Typography>
+                      <Typography variant="body2" sx={{ p: 2, border: 1, borderColor: 'grey.300', borderRadius: 1, bgcolor: 'grey.50' }}>
+                        {(report as any).shiftComment}
+                      </Typography>
+                    </Box>
+                  )}
                 </Grid>
                 
                 {/* Права колонка 65%: Детальна таблиця останніх дій */}
@@ -1230,6 +1287,15 @@ export default function ShiftReportModal({
                         Останні дії (детально)
                       </Typography>
                       {(() => {
+                        const recent = (report.itemsSnapshot as any)?.recentActivities;
+                        if (Array.isArray(recent) && recent.length > 0) {
+                          return (
+                            <Box>
+                              <RecentActivitiesTable data={recent} />
+                            </Box>
+                          );
+                        }
+                        
                         // Витягуємо дані з itemsSnapshot
                         const items = getItemsFromSnapshot(report.itemsSnapshot);
                         const ordersCount = (report.itemsSnapshot as any)?.ordersCount || 0;
@@ -1471,7 +1537,7 @@ export default function ShiftReportModal({
               
               {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress size={60} />
+                  <FlowerSpinner size={60} />
                   <Typography variant="body2" sx={{ ml: 2, alignSelf: 'center' }}>
                     Завантаження товарів...
                   </Typography>
@@ -1485,11 +1551,11 @@ export default function ShiftReportModal({
                     <thead>
                       <tr>
                         <th style={{ textAlign: 'left', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Назва</th>
-                        <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>К-сть</th>
-                        <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Ціна</th>
-                        <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Продаж</th>
-                        <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Поставка</th>
-                        <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Списання</th>
+                        <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>К-сть</th>
+                        <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Ціна</th>
+                        <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', backgroundColor: 'rgba(46,125,50,0.1)' }}>Продаж</th>
+                        <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', backgroundColor: 'rgba(33,150,243,0.1)' }}>Поставка</th>
+                        <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', backgroundColor: 'rgba(211,47,47,0.1)' }}>Списання</th>
                         <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0' }}>Баланс</th>
                       </tr>
                     </thead>
@@ -1497,31 +1563,16 @@ export default function ShiftReportModal({
                       {getItemsFromSnapshot(report.itemsSnapshot).map((item: any, idx: number) => (
                         <tr key={item.slug || item.product || idx}>
                           <td style={{ padding: '6px 6px', borderBottom: '1px solid #f0f0f0' }}>{item.name || '—'}</td>
-                          <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>{item.quantity ?? 0}</td>
-                          <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>{item.price ?? 0}₴</td>
-                          <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>
-                            <span style={{
-                              display: 'inline-block', padding: '2px 8px', borderRadius: 999,
-                              fontWeight: 700,
-                              backgroundColor: (item.sold ?? 0) > 0 ? 'rgba(46,125,50,0.18)' : 'rgba(46,125,50,0.05)',
-                              color: (item.sold ?? 0) > 0 ? '#1B5E20' : '#2E7D32'
-                            }}>{item.sold ?? 0}</span>
+                          <td style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{item.quantity ?? 0}</td>
+                          <td style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{item.price ?? 0}₴</td>
+                          <td style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', backgroundColor: (item.sold ?? 0) > 0 ? 'rgba(46,125,50,0.18)' : 'rgba(46,125,50,0.05)', fontWeight: 700, color: (item.sold ?? 0) > 0 ? '#1B5E20' : '#2E7D32' }}>
+                            {item.sold ?? 0}
                           </td>
-                          <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>
-                            <span style={{
-                              display: 'inline-block', padding: '2px 8px', borderRadius: 999,
-                              fontWeight: 700,
-                              backgroundColor: (item.delivered ?? 0) > 0 ? 'rgba(33,150,243,0.20)' : 'rgba(33,150,243,0.06)',
-                              color: (item.delivered ?? 0) > 0 ? '#0D47A1' : '#1565C0'
-                            }}>{item.delivered ?? 0}</span>
+                          <td style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', backgroundColor: (item.delivered ?? 0) > 0 ? 'rgba(33,150,243,0.20)' : 'rgba(33,150,243,0.06)', fontWeight: 700, color: (item.delivered ?? 0) > 0 ? '#0D47A1' : '#1565C0' }}>
+                            {item.delivered ?? 0}
                           </td>
-                          <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>
-                            <span style={{
-                              display: 'inline-block', padding: '2px 8px', borderRadius: 999,
-                              fontWeight: 700,
-                              backgroundColor: (item.writtenOff ?? 0) > 0 ? 'rgba(211,47,47,0.20)' : 'rgba(211,47,47,0.06)',
-                              color: (item.writtenOff ?? 0) > 0 ? '#B71C1C' : '#C62828'
-                            }}>{item.writtenOff ?? 0}</span>
+                          <td style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', backgroundColor: (item.writtenOff ?? 0) > 0 ? 'rgba(211,47,47,0.20)' : 'rgba(211,47,47,0.06)', fontWeight: 700, color: (item.writtenOff ?? 0) > 0 ? '#B71C1C' : '#C62828' }}>
+                            {item.writtenOff ?? 0}
                           </td>
                           <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>{((item.price ?? 0) * (item.quantity ?? 0))}₴</td>
                         </tr>
@@ -1741,9 +1792,15 @@ export default function ShiftReportModal({
               </Box>
               
               {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress size={60} />
-                  <Typography variant="body2" sx={{ ml: 2, alignSelf: 'center' }}>
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '40vh',
+                  gap: 2
+                }}>
+                  <FlowerSpinner size={60} />
+                  <Typography variant="body2">
                     Завантаження товарів...
                   </Typography>
                 </Box>
@@ -1953,6 +2010,26 @@ export default function ShiftReportModal({
                     <Typography variant="caption" color="textSecondary">
                       (автоматично з продажів)
                     </Typography>
+                    {/* Коментар до зміни — перенесено під Касу */}
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+                        Коментар до зміни
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        value={createFormData.shiftComment}
+                        onChange={(e) => setCreateFormData(prev => ({ ...prev, shiftComment: e.target.value }))}
+                        variant="outlined"
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': { borderRadius: 0 },
+                          '& .MuiOutlinedInput-notchedOutline': { borderRadius: 0 }
+                        }}
+                        placeholder="Додайте коментар до зміни (за потреби)"
+                        multiline
+                        rows={2}
+                      />
+                    </Box>
                   </Box>
                 </Grid>
                 
@@ -2097,25 +2174,7 @@ export default function ShiftReportModal({
                         </tbody>
                       </table>
                     </Box>
-                    <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle1" color="textSecondary" gutterBottom>
-                        Коментар до зміни
-                  </Typography>
-                  <TextField
-                    fullWidth
-                        value={createFormData.shiftComment}
-                        onChange={(e) => setCreateFormData(prev => ({ ...prev, shiftComment: e.target.value }))}
-                    variant="outlined"
-                    size="small"
-                        sx={{
-                          '& .MuiOutlinedInput-root': { borderRadius: 0 },
-                          '& .MuiOutlinedInput-notchedOutline': { borderRadius: 0 }
-                        }}
-                        placeholder="Додайте коментар до зміни (за потреби)"
-                        multiline
-                        rows={2}
-                  />
-                    </Box>
+                    {/* Коментар перенесено в ліву колонку під "Каса" */}
                   </Box>
                 </Grid>
               </Grid>
@@ -2149,7 +2208,7 @@ export default function ShiftReportModal({
               
               {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress size={60} />
+                  <FlowerSpinner size={60} />
                   <Typography variant="body2" sx={{ ml: 2, alignSelf: 'center' }}>
                     Завантаження товарів...
                   </Typography>
@@ -2178,11 +2237,11 @@ export default function ShiftReportModal({
                     <thead>
                       <tr>
                         <th style={{ textAlign: 'left', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '30%' }}>Назва</th>
-                        <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '12%' }}>К-сть</th>
-                        <th className="col-mobile-hide" style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '12%' }}>Ціна</th>
-                        <th className="col-mobile-hide" style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '10%', backgroundColor: 'rgba(46,125,50,0.1)' }}>Продаж</th>
-                        <th className="col-mobile-hide" style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '10%', backgroundColor: 'rgba(33,150,243,0.1)' }}>Поставка</th>
-                        <th className="col-mobile-hide" style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '10%', backgroundColor: 'rgba(211,47,47,0.1)' }}>Списання</th>
+                        <th style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '12%' }}>К-сть</th>
+                        <th className="col-mobile-hide" style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '12%' }}>Ціна</th>
+                        <th className="col-mobile-hide" style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '10%', backgroundColor: 'rgba(46,125,50,0.1)' }}>Продаж</th>
+                        <th className="col-mobile-hide" style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '10%', backgroundColor: 'rgba(33,150,243,0.1)' }}>Поставка</th>
+                        <th className="col-mobile-hide" style={{ textAlign: 'center', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '10%', backgroundColor: 'rgba(211,47,47,0.1)' }}>Списання</th>
                         <th style={{ textAlign: 'right', padding: '8px 6px', borderBottom: '1px solid #e0e0e0', width: '16%' }}>Баланс</th>
                       </tr>
                     </thead>
@@ -2198,28 +2257,16 @@ export default function ShiftReportModal({
                                 {product.price ?? 0}₴ • Продаж: {activity.sold ?? 0} • Поставка: {activity.delivered ?? 0} • Списання: {activity.writtenOff ?? 0}
                             </Box>
                             </td>
-                            <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>{quantity}</td>
-                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>{product.price ?? 0}₴</td>
-                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0', backgroundColor: 'rgba(46,125,50,0.05)' }}>
-                              <span style={{
-                                display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontWeight: 700,
-                                backgroundColor: (activity.sold ?? 0) > 0 ? 'rgba(46,125,50,0.18)' : 'transparent',
-                                color: (activity.sold ?? 0) > 0 ? '#1B5E20' : '#2E7D32'
-                              }}>{activity.sold ?? 0}</span>
+                            <td style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{quantity}</td>
+                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{product.price ?? 0}₴</td>
+                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', backgroundColor: (activity.sold ?? 0) > 0 ? 'rgba(46,125,50,0.18)' : 'rgba(46,125,50,0.05)', fontWeight: 700, color: (activity.sold ?? 0) > 0 ? '#1B5E20' : '#2E7D32' }}>
+                              {activity.sold ?? 0}
                             </td>
-                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0', backgroundColor: 'rgba(33,150,243,0.05)' }}>
-                              <span style={{
-                                display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontWeight: 700,
-                                backgroundColor: (activity.delivered ?? 0) > 0 ? 'rgba(33,150,243,0.20)' : 'transparent',
-                                color: (activity.delivered ?? 0) > 0 ? '#0D47A1' : '#1565C0'
-                              }}>{activity.delivered ?? 0}</span>
+                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', backgroundColor: (activity.delivered ?? 0) > 0 ? 'rgba(33,150,243,0.20)' : 'rgba(33,150,243,0.05)', fontWeight: 700, color: (activity.delivered ?? 0) > 0 ? '#0D47A1' : '#1565C0' }}>
+                              {activity.delivered ?? 0}
                             </td>
-                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0', backgroundColor: 'rgba(211,47,47,0.05)' }}>
-                              <span style={{
-                                display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontWeight: 700,
-                                backgroundColor: (activity.writtenOff ?? 0) > 0 ? 'rgba(211,47,47,0.20)' : 'transparent',
-                                color: (activity.writtenOff ?? 0) > 0 ? '#B71C1C' : '#C62828'
-                              }}>{activity.writtenOff ?? 0}</span>
+                            <td className="col-mobile-hide" style={{ padding: '6px 6px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', backgroundColor: (activity.writtenOff ?? 0) > 0 ? 'rgba(211,47,47,0.20)' : 'rgba(211,47,47,0.05)', fontWeight: 700, color: (activity.writtenOff ?? 0) > 0 ? '#B71C1C' : '#C62828' }}>
+                              {activity.writtenOff ?? 0}
                             </td>
                             <td style={{ padding: '6px 6px', textAlign: 'right', borderBottom: '1px solid #f0f0f0' }}>{((product.price ?? 0) * quantity)}₴</td>
                           </tr>
@@ -2290,20 +2337,20 @@ export default function ShiftReportModal({
     >
       <DialogTitle sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-          <Typography variant="h4" component="h1">
+          <Typography variant="h4" component="h1" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {(() => {
+              if (mode === 'view') {
+                return <Box component="span" sx={{ color: 'success.main', fontWeight: 700, mr: 1 }}>(Завершена ✅)</Box>;
+              }
+              if (mode === 'create') {
+                return <Box component="span" sx={{ color: 'info.main', fontWeight: 700, mr: 1 }}>(Створити)</Box>;
+              }
+              return null;
+            })()}
             {getTitle()}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, position: 'absolute', right: 0 }}>
-            {mode === 'view' && report && (
-              <>
-                <IconButton onClick={handleEdit} color="primary" size="large" title="Редагувати">
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={handleDelete} color="error" size="large" title="Видалити">
-                  <DeleteIcon />
-                </IconButton>
-              </>
-            )}
+            {/* У режимі перегляду закритої зміни прибираємо кнопки редагування та видалення */}
             <IconButton onClick={onClose} size="large" title="Закрити">
               <CloseIcon />
             </IconButton>
@@ -2320,7 +2367,7 @@ export default function ShiftReportModal({
         
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress size={60} />
+            <FlowerSpinner size={60} />
           </Box>
         )}
         
@@ -2341,45 +2388,6 @@ export default function ShiftReportModal({
       
       {mode === 'view' && (
         <DialogActions sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
-          <Button 
-            onClick={async () => {
-              if (!report) return;
-              try {
-                setLoading(true);
-                await finalizeShift(report.documentId);
-                onRefresh();
-                onClose();
-              } catch (error) {
-                console.error('Error finalizing shift:', error);
-                setError('Помилка при завершенні зміни');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            variant="contained" 
-            color="success" 
-            size="large"
-            disabled={loading}
-          >
-            {loading ? (
-              <CircularProgress size={24} />
-            ) : (
-              'Завершити зміну'
-            )}
-          </Button>
-          <Button 
-            onClick={handleConfirmCloseShift} 
-            variant="contained" 
-            color="primary" 
-            size="large"
-            disabled={loading || Object.values(selectedProducts).every(qty => qty === 0)}
-          >
-            {loading ? (
-              <CircularProgress size={24} />
-            ) : (
-              `Зберегти зміну з товарами (${Object.values(selectedProducts).reduce((sum, qty) => sum + qty, 0)})`
-            )}
-          </Button>
           <Button onClick={onClose} variant="outlined" size="large">
             Закрити
           </Button>
@@ -2398,7 +2406,7 @@ export default function ShiftReportModal({
             size="large"
             disabled={loading}
           >
-            {loading ? <CircularProgress size={24} /> : 'Підтвердити закриття'}
+            {loading ? <FlowerSpinner size={24} /> : 'Підтвердити закриття'}
           </Button>
         </DialogActions>
       )}
@@ -2415,7 +2423,7 @@ export default function ShiftReportModal({
             size="large"
             disabled={loading || createFormData.worker === 0}
           >
-            {loading ? <CircularProgress size={24} /> : 'Закрити зміну'}
+            {loading ? <FlowerSpinner size={24} /> : 'Закрити зміну'}
           </Button>
         </DialogActions>
       )}

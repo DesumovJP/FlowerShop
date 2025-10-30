@@ -20,6 +20,7 @@ export default function StorySection() {
         <Grid container spacing={6} alignItems="center">
           <Grid size={{ xs: 12, md: 6 }}>
             <Card
+              className="glass-hover"
               sx={{
                 borderRadius: 2,
                 overflow: 'hidden',
@@ -27,28 +28,14 @@ export default function StorySection() {
               }}
             >
               <CardMedia
-                component="div"
+                component="img"
+                image={'http://localhost:1337/uploads/photo_2025_10_30_17_16_55_10_df7ce75f95.jpg'}
                 sx={{
                   height: { xs: 300, md: 400 },
-                  background: 'linear-gradient(135deg, #E8F5E8 0%, #F0F8F0 50%, #F5F5F5 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '6rem',
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.2\'/%3E%3Ccircle cx=\'80\' cy=\'40\' r=\'1\' fill=\'%23ffffff\' opacity=\'0.3\'/%3E%3Ccircle cx=\'40\' cy=\'80\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.1\'/%3E%3C/svg%3E")',
-                  }
+                  width: '100%',
+                  objectFit: 'cover'
                 }}
-              >
-                👩‍🌾
-              </CardMedia>
+              />
             </Card>
           </Grid>
           

@@ -216,7 +216,7 @@ export default function POSSystem() {
         total,
         comment: orderComment,
         payload: {
-          items: order.items.map(i => ({ documentId: i.documentId, quantity: i.quantity, price: i.price }))
+          items: order.items.map(i => ({ documentId: i.documentId, name: i.name, quantity: i.quantity, price: i.price }))
         }
       } as any);
     } catch (e) {
@@ -284,7 +284,7 @@ export default function POSSystem() {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
-        gap: 2,
+        gap: 1.5,
         position: 'fixed',
         top: 0,
         left: 0,
@@ -292,13 +292,19 @@ export default function POSSystem() {
         bottom: 0,
         zIndex: 9999
       }}>
-        <Typography variant="h6" color="textSecondary" sx={{ 
-          textAlign: 'center',
-          fontSize: { xs: '1rem', sm: '1.25rem' }
+        <Box sx={{
+          fontSize: 64,
+          animation: 'spin 2.4s linear infinite',
+          '@keyframes spin': {
+            from: { transform: 'rotate(0deg)' },
+            to: { transform: 'rotate(360deg)' }
+          }
         }}>
-          Завантаження товарів для POS-системи...
+          🌸
+        </Box>
+        <Typography color="textSecondary" sx={{ fontSize: 18, fontWeight: 500 }}>
+          Завантаження...
         </Typography>
-        <Box sx={{ fontSize: '2rem' }}>🌸</Box>
       </Box>
     );
   }
@@ -352,7 +358,27 @@ export default function POSSystem() {
               }
             }
           }}>
-            {cart.length > 0 && (
+            {cart.length === 0 ? (
+              <Box sx={{
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 1.25,
+                color: 'text.secondary'
+              }}>
+                {/* Minimal cart outline SVG */}
+                <Box component="svg" viewBox="0 0 24 24" sx={{ width: 40, height: 40, opacity: 0.6 }}>
+                  <path d="M7 4h-2l-1 2m0 0 2.2 8.8c.1.5.6.9 1.1.9h8.8c.5 0 1-.4 1.1-.9L19 8H6.2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="10" cy="19" r="1.2" fill="currentColor"/>
+                  <circle cx="16" cy="19" r="1.2" fill="currentColor"/>
+                </Box>
+                <Typography sx={{ textAlign: 'center', fontWeight: 400, color: 'text.secondary' }}>
+                  Додайте товари в кошик
+                </Typography>
+              </Box>
+            ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {cart.map((item) => (
                   <Card key={item.product.documentId} sx={{
@@ -1119,10 +1145,13 @@ export default function POSSystem() {
                   value: 'cash', 
                   label: 'Готівка', 
                   icon: (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M2 17H22V19H2V17ZM2 10H22V12H2V10ZM2 3H22V5H2V3ZM4 6H20V8H4V6ZM4 13H20V15H4V13Z" fill="currentColor"/>
-                      <circle cx="6" cy="7" r="1" fill="#2E7D32"/>
-                      <circle cx="6" cy="14" r="1" fill="#2E7D32"/>
+                    // Dollar bill SVG
+                    <svg width="28" height="28" viewBox="0 0 64 32" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="2" y="2" width="60" height="28" rx="4" fill="#2e7d32" stroke="#1b5e20" strokeWidth="2"/>
+                      <rect x="6" y="6" width="52" height="20" rx="3" fill="#43a047"/>
+                      <circle cx="20" cy="16" r="4" fill="#1b5e20" opacity="0.25"/>
+                      <circle cx="44" cy="16" r="4" fill="#1b5e20" opacity="0.25"/>
+                      <text x="30" y="20" fontSize="10" fill="#fff" fontFamily="Arial" fontWeight="700">$</text>
                     </svg>
                   )
                 },
@@ -1130,11 +1159,10 @@ export default function POSSystem() {
                   value: 'card', 
                   label: 'Картка', 
                   icon: (
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <rect x="2" y="6" width="20" height="12" rx="2" fill="#1976D2" stroke="#1976D2" strokeWidth="1"/>
                       <rect x="2" y="10" width="20" height="2" fill="#fff"/>
                       <circle cx="18" cy="8" r="1.5" fill="#FFD700"/>
-                      <text x="4" y="16" fontSize="8" fill="#fff" fontFamily="Arial">**** **** **** 1234</text>
                     </svg>
                   )
                 }
@@ -1144,7 +1172,7 @@ export default function POSSystem() {
                   onClick={() => setPaymentMethod(method.value)}
                   sx={{
                     flex: 1,
-                    height: { xs: '2.5rem', sm: '3rem', md: '3.5rem' },
+                    height: { xs: '3.2rem', sm: '3.8rem', md: '4.2rem' },
                     borderRadius: '0.5rem',
                     border: paymentMethod === method.value 
                       ? '2px solid rgba(46, 125, 50, 0.3)' 
@@ -1159,7 +1187,7 @@ export default function POSSystem() {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.5rem',
+                    gap: '0.6rem',
                     '&:hover': {
                       border: '2px solid rgba(46, 125, 50, 0.2)',
                       background: 'rgba(46, 125, 50, 0.05)',
@@ -1171,9 +1199,10 @@ export default function POSSystem() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    pt: { xs: '0.3rem', sm: '0.4rem' },
                     '& svg': {
-                      width: '1.5rem',
-                      height: '1.5rem'
+                      width: '1.75rem',
+                      height: '1.75rem'
                     }
                   }}>
                     {method.icon}

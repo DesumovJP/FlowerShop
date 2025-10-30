@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -18,6 +18,23 @@ import {
   ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
+import ProductCard from './ProductCard';
+
+type GqlImage = { 
+  documentId: string;
+  url: string;
+  alternativeText?: string;
+  width?: number;
+  height?: number;
+};
+type GqlProduct = {
+  documentId: string;
+  name: string;
+  slug: string;
+  price: number;
+  productType: 'bouquet' | 'singleflower';
+  image: GqlImage[];
+};
 
 const catalogItems = [
   {
@@ -64,7 +81,26 @@ const catalogItems = [
   },
 ];
 
+async function fetchSingleFlowers(): Promise<GqlProduct[]> {
+  try {
+    const params = new URLSearchParams({ page: '1', pageSize: '6', productType: 'singleflower' });
+    const response = await fetch(`/api/products?${params.toString()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    return result.data || [];
+  } catch (e) {
+    console.error('Failed to fetch singleflowers:', e);
+    return [];
+  }
+}
+
 export default function CategoriesSection() {
+  const [singleFlowers, setSingleFlowers] = useState<GqlProduct[]>([]);
+
+  useEffect(() => {
+    fetchSingleFlowers().then(setSingleFlowers).catch(() => setSingleFlowers([]));
+  }, []);
+
   return (
     <Box sx={{ py: { xs: 8, md: 12 }, backgroundColor: 'white' }}>
       <Container maxWidth="xl">
@@ -84,124 +120,24 @@ export default function CategoriesSection() {
           </Typography>
         </Box>
 
-        <Grid container spacing={3}>
-          {catalogItems.map((item) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.id}>
-              <Card
-                component={Link}
-                href={`/product/${item.id}`}
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                  transition: 'transform 0.3s ease-in-out',
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.15)',
-                  },
-                }}
-              >
-                <Box sx={{ position: 'relative' }}>
-                  <CardMedia
-                    component="div"
-                    sx={{
-                      height: 250,
-                      background: item.gradient,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '4rem',
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.2\'/%3E%3Ccircle cx=\'80\' cy=\'40\' r=\'1\' fill=\'%23ffffff\' opacity=\'0.3\'/%3E%3Ccircle cx=\'40\' cy=\'80\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.1\'/%3E%3C/svg%3E")',
-                      }
-                    }}
-                  >
-                    {item.image}
-                  </CardMedia>
-                  
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 12,
-                      right: 12,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1,
-                    }}
-                  >
-                    <IconButton
-                      size="small"
-                      sx={{
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                        backdropFilter: 'blur(10px)',
-                        '&:hover': { 
-                          backgroundColor: 'rgba(255,255,255,1)',
-                          transform: 'scale(1.1)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                    >
-                      <FavoriteIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      sx={{
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                        backdropFilter: 'blur(10px)',
-                        '&:hover': { 
-                          backgroundColor: 'rgba(255,255,255,1)',
-                          transform: 'scale(1.1)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                    >
-                      <ShoppingCartIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </Box>
+        {/* Прибрано картки-заглушки */}
 
-                <CardContent sx={{ p: 3, textAlign: 'center', flexGrow: 1 }}>
-                  <Typography
-                    variant="h6"
-                    component="h3"
-                    sx={{
-                      fontWeight: 600,
-                      mb: 2,
-                      color: 'text.primary',
-                      fontFamily: 'var(--font-playfair)',
-                    }}
-                  >
-                    {item.name}
-                  </Typography>
-                  
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: 'primary.main',
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    {item.price} ₴
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        {/* 6 карток singleflower з каталогу */}
+        <Box sx={{ mt: 6 }}>
+          <Grid container spacing={3}>
+            {singleFlowers.slice(0, 6).map((p) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={p.documentId || p.slug}>
+                <ProductCard product={{
+                  name: p.name,
+                  price: p.price,
+                  imageUrl: p.image?.[0]?.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${p.image[0].url}` : undefined,
+                  slug: p.slug,
+                  cardType: 'standart'
+                }} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
         <Box sx={{ textAlign: 'center', mt: 8 }}>
           <Button

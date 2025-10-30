@@ -92,6 +92,7 @@ export default function HeroSection() {
             >
               {/* Великий букет зліва */}
               <Card
+                className="glass-hover"
                 sx={{
                   gridRow: { sm: 'span 2' },
                   height: { xs: '300px', sm: '100%' },
@@ -101,32 +102,19 @@ export default function HeroSection() {
                 }}
               >
                 <CardMedia
-                  component="div"
+                  component="img"
+                  image={'http://localhost:1337/uploads/photo_2025_10_29_02_27_29_9e7341e7b9.jpg'}
                   sx={{
                     height: '100%',
-                    background: 'linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 50%, #FFE4E1 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '6rem',
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'2\' fill=\'%23ffffff\' opacity=\'0.3\'/%3E%3Ccircle cx=\'80\' cy=\'40\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.2\'/%3E%3Ccircle cx=\'40\' cy=\'80\' r=\'1\' fill=\'%23ffffff\' opacity=\'0.4\'/%3E%3C/svg%3E")',
-                    }
+                    width: '100%',
+                    objectFit: 'cover'
                   }}
-                >
-                  🌸
-                </CardMedia>
+                />
               </Card>
               
               {/* Менший букет справа зверху */}
               <Card
+                className="glass-hover"
                 sx={{
                   height: { xs: '200px', sm: '240px' },
                   borderRadius: 2,
@@ -135,32 +123,19 @@ export default function HeroSection() {
                 }}
               >
                 <CardMedia
-                  component="div"
+                  component="img"
+                  image={'http://localhost:1337/uploads/photo_2025_10_28_21_55_50_b7c287e8ee.jpg'}
                   sx={{
                     height: '100%',
-                    background: 'linear-gradient(135deg, #DDA0DD 0%, #EE82EE 50%, #DA70D6 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '4rem',
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.2\'/%3E%3Ccircle cx=\'70\' cy=\'20\' r=\'1\' fill=\'%23ffffff\' opacity=\'0.3\'/%3E%3C/svg%3E")',
-                    }
+                    width: '100%',
+                    objectFit: 'cover'
                   }}
-                >
-                  🌺
-                </CardMedia>
+                />
               </Card>
               
               {/* Менший букет справа знизу */}
               <Card
+                className="glass-hover"
                 sx={{
                   height: { xs: '200px', sm: '240px' },
                   borderRadius: 2,
@@ -169,28 +144,14 @@ export default function HeroSection() {
                 }}
               >
                 <CardMedia
-                  component="div"
+                  component="img"
+                  image={'http://localhost:1337/uploads/photo_2025_10_30_17_16_55_3629a1f0f2.jpg'}
                   sx={{
                     height: '100%',
-                    background: 'linear-gradient(135deg, #98FB98 0%, #90EE90 50%, #8FBC8F 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '4rem',
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'25\' cy=\'25\' r=\'1\' fill=\'%23ffffff\' opacity=\'0.3\'/%3E%3Ccircle cx=\'75\' cy=\'75\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.2\'/%3E%3C/svg%3E")',
-                    }
+                    width: '100%',
+                    objectFit: 'cover'
                   }}
-                >
-                  🌿
-                </CardMedia>
+                />
               </Card>
             </Box>
           </Grid>

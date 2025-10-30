@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
+import FlowerSpinner from './FlowerSpinner';
 import {
   Box,
   Container,
@@ -215,9 +216,7 @@ export default function CatalogContent() {
             </Link>
             <Typography color="text.primary">Каталог</Typography>
           </Breadcrumbs>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
-            Каталог
-          </Typography>
+          {/* Прибрали дублюючий заголовок під хлібними крихтами */}
         </Box>
 
         {/* Filters */}
@@ -272,13 +271,15 @@ export default function CatalogContent() {
 
         {/* Індикатор завантаження */}
         {loading && (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '40vh',
             mt: 4,
-            mb: 4 
+            mb: 4
           }}>
-            <CircularProgress size={40} />
+            <FlowerSpinner size={56} />
           </Box>
         )}
 

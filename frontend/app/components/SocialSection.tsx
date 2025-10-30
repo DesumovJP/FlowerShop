@@ -12,21 +12,9 @@ import {
 
 export default function SocialSection() {
   const socialImages = [
-    {
-      id: 1,
-      image: '🌸',
-      gradient: 'linear-gradient(135deg, #FFB6C1 0%, #FFC0CB 50%, #FFE4E1 100%)',
-    },
-    {
-      id: 2,
-      image: '🌺',
-      gradient: 'linear-gradient(135deg, #DDA0DD 0%, #EE82EE 50%, #DA70D6 100%)',
-    },
-    {
-      id: 3,
-      image: '🌻',
-      gradient: 'linear-gradient(135deg, #FFD700 0%, #FFFF00 50%, #FFF8DC 100%)',
-    },
+    'http://localhost:1337/uploads/photo_2025_10_30_17_16_55_11_ed91f3a05b.jpg',
+    'http://localhost:1337/uploads/photo_2025_10_29_02_27_29_9e7341e7b9.jpg',
+    'http://localhost:1337/uploads/photo_2025_10_30_17_16_55_7_279aab85ae.jpg',
   ];
 
   return (
@@ -82,9 +70,10 @@ export default function SocialSection() {
           
           <Grid size={{ xs: 12, md: 6 }}>
             <Grid container spacing={2}>
-              {socialImages.map((item) => (
-                <Grid size={{ xs: 4 }} key={item.id}>
+              {socialImages.map((src, idx) => (
+                <Grid size={{ xs: 4 }} key={idx}>
                   <Card
+                    className="glass-hover"
                     sx={{
                       borderRadius: 2,
                       overflow: 'hidden',
@@ -97,28 +86,14 @@ export default function SocialSection() {
                     }}
                   >
                     <CardMedia
-                      component="div"
+                      component="img"
+                      image={src}
                       sx={{
                         height: 200,
-                        background: item.gradient,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '3rem',
-                        position: 'relative',
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'20\' cy=\'20\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.2\'/%3E%3Ccircle cx=\'80\' cy=\'40\' r=\'1\' fill=\'%23ffffff\' opacity=\'0.3\'/%3E%3Ccircle cx=\'40\' cy=\'80\' r=\'1.5\' fill=\'%23ffffff\' opacity=\'0.1\'/%3E%3C/svg%3E")',
-                        }
+                        width: '100%',
+                        objectFit: 'cover'
                       }}
-                    >
-                      {item.image}
-                    </CardMedia>
+                    />
                   </Card>
                 </Grid>
               ))}

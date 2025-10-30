@@ -4,10 +4,19 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { read as readRecentActivities } from '../utils/recentActivities.store';
 
-export default function RecentActivitiesTable() {
-  const [activities, setActivities] = React.useState<any[]>([]);
+type RecentActivitiesTableProps = {
+  data?: any[];
+};
+
+export default function RecentActivitiesTable({ data }: RecentActivitiesTableProps) {
+  const [activities, setActivities] = React.useState<any[]>(data || []);
 
   React.useEffect(() => {
+    if (data) {
+      // If data is provided via props (e.g., from a saved shift), use it as-is
+      setActivities(Array.isArray(data) ? data : []);
+      return;
+    }
     const load = () => {
       try {
         setActivities(readRecentActivities());
@@ -25,7 +34,7 @@ export default function RecentActivitiesTable() {
         window.removeEventListener('recentActivities:update', handler);
       }
     };
-  }, []);
+  }, [data]);
 
   return (
     <Box sx={{

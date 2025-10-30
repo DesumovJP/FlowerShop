@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -265,6 +265,7 @@ function MyShiftContent() {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [monthStats, setMonthStats] = useState<{ cashTotal: number; writeoffTotal: number; ordersCount: number }>({ cashTotal: 0, writeoffTotal: 0, ordersCount: 0 });
 
   const handleDayClick = (date: string, report?: any) => {
     setSelectedDate(date);
@@ -341,6 +342,49 @@ function MyShiftContent() {
     setRefreshTrigger(prev => prev + 1);
   };
 
+  // Helpers to get month boundaries from ISO date string
+  const getMonthBounds = (isoDate?: string) => {
+    const base = isoDate ? new Date(isoDate) : new Date();
+    const start = new Date(base.getFullYear(), base.getMonth(), 1);
+    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    return { start: fmt(start), end: fmt(end) };
+  };
+
+  // Fetch monthly stats via REST proxy (reliable in Strapi v5)
+  const fetchMonthlyStats = async () => {
+    try {
+      const base = selectedDate ? new Date(selectedDate) : new Date();
+      const month = String(base.getMonth() + 1).padStart(2, '0');
+      const year = String(base.getFullYear());
+      const res = await fetch(`/api/shift-reports?month=${month}&year=${year}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const list = json?.data || [];
+      let cashTotal = 0;
+      let writeoffTotal = 0;
+      let ordersCount = 0;
+      for (const item of list) {
+        const attr = item.attributes || {};
+        cashTotal += Number(attr.cash || 0);
+        const snap = attr.itemsSnapshot || {};
+        ordersCount += Number(snap?.ordersCount || 0);
+        const items = Array.isArray(snap?.items) ? snap.items : [];
+        for (const it of items) {
+          const w = Number(it?.writtenOff || 0);
+          const price = Number(it?.price || 0);
+          writeoffTotal += w * price;
+        }
+      }
+      setMonthStats({ cashTotal, writeoffTotal, ordersCount });
+    } catch (e) {
+      console.error('Failed to fetch monthly stats:', e);
+      setMonthStats({ cashTotal: 0, writeoffTotal: 0, ordersCount: 0 });
+    }
+  };
+
+  useEffect(() => { fetchMonthlyStats(); }, [selectedDate, refreshTrigger]);
+
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, sm: 3 } }}>
       {/* Sticky header */}
@@ -368,10 +412,7 @@ function MyShiftContent() {
           >
             Моя зміна
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Button variant="outlined" size="small" onClick={handleRefresh} sx={{ borderRadius: 0 }}>Оновити</Button>
-            <Button variant="contained" size="small" onClick={() => handleAddShift(new Date().toISOString().slice(0,10))} sx={{ borderRadius: 0 }}>Додати зміну</Button>
-          </Box>
+        {/* Кнопки "Оновити" та "Додати зміну" приховано за вимогою */}
         </Box>
       </Box>
 
@@ -389,6 +430,35 @@ function MyShiftContent() {
           onAddShift={handleAddShift}
           refreshTrigger={refreshTrigger}
         />
+      </Box>
+
+      {/* Monthly stats under the calendar */}
+      <Box sx={{
+        mt: 2,
+        position: 'relative',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.85) 100%)',
+        border: '1px solid rgba(46,125,50,0.08)',
+        boxShadow: '0 12px 32px rgba(46,125,50,0.08)',
+        borderRadius: 0,
+        p: { xs: 2, sm: 3 },
+        overflow: 'hidden'
+      }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Статистика за місяць</Typography>
+        <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', color: 'text.secondary' }}>
+          <Typography>Каса за місяць: <b>{monthStats.cashTotal}₴</b></Typography>
+          <Typography>Списання за місяць: <b>{monthStats.writeoffTotal}₴</b></Typography>
+          <Typography>Здійснено продажів: <b>{monthStats.ordersCount}</b></Typography>
+        </Box>
+        {/* В розробці overlay */}
+        <Box sx={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'text.secondary', fontWeight: 700,
+          fontSize: { xs: '0.95rem', sm: '1.1rem' }
+        }}>
+          В розробці
+        </Box>
       </Box>
 
       <ShiftReportModal
@@ -463,11 +533,34 @@ function DashboardContent() {
   return (
     <>
       {loading ? (
-        <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 }, px: { xs: 2, sm: 3 } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <Typography color="textSecondary">Завантаження товарів для POS-системи...</Typography>
+        <Box sx={{
+          position: 'fixed',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 1.5,
+          backgroundColor: '#f5f5f5'
+        }}>
+          <Box sx={{
+            fontSize: 64,
+            animation: 'spin 2.4s linear infinite',
+            '@keyframes spin': {
+              from: { transform: 'rotate(0deg)' },
+              to: { transform: 'rotate(360deg)' }
+            }
+          }}>
+            🌸
           </Box>
-        </Container>
+          <Box sx={{
+            color: 'text.secondary',
+            fontSize: 18,
+            fontWeight: 500
+          }}>
+            Завантаження...
+          </Box>
+        </Box>
       ) : (
         <POSSystem />
       )}

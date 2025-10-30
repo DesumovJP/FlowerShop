@@ -19,6 +19,7 @@ export async function GET(
           slug
           price
           productType
+          availableQuantity
           color
           description
           cardType

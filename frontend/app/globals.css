@@ -72,6 +72,12 @@ body {
 }
 
 /* Морфізм утилітарні класи */
+
+/* Disable default MUI ripple globally */
+.MuiButtonBase-root .MuiTouchRipple-root {
+  display: none !important;
+}
+
 .morphism-card {
   background: var(--morphism-bg);
   border-radius: 16px;
@@ -203,9 +209,8 @@ body {
   right: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   opacity: 0;
   transition: opacity 0.4s ease-out;
   z-index: 10;
@@ -273,4 +278,52 @@ body {
 /* Prevent body scroll when dropdown is open */
 body.MuiModal-open {
   overflow: hidden !important;
+}
+
+/* Global glassmorphism helpers for product cards */
+.glass-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.65) 0%, rgba(250,252,255,0.55) 100%);
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 12px 32px rgba(46,125,50,0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+}
+
+.glass-media {
+  background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%);
+}
+
+/* Light shadow on images/cards that disappears on hover (no blur) */
+.glass-hover {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  transition: box-shadow 220ms ease;
+}
+
+.glass-hover:hover {
+  box-shadow: none;
+}
+
+/* Gentle appear drop for mobile nav dialog content */
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.drop-appear {
+  animation: dropIn 220ms ease both;
+}
+
+/* Subtle image darkening (inside the card), removed on hover */
+.glass-hover .MuiCardMedia-root,
+.glass-hover img {
+  transition: filter 220ms ease;
+  filter: brightness(0.92) contrast(1.02);
+}
+
+.glass-hover:hover .MuiCardMedia-root,
+.glass-hover:hover img {
+  filter: brightness(1) contrast(1);
 }

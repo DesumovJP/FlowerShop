@@ -71,6 +71,7 @@ interface ProductFiltersProps {
 
 // Мапінг кольорів
 const colorMapping: Record<string, string> = {
+  // EN canonical
   'red': 'Червоний',
   'pink': 'Рожевий',
   'white': 'Білий',
@@ -80,7 +81,21 @@ const colorMapping: Record<string, string> = {
   'green': 'Зелений',
   'orange': 'Оранжевий',
   'cream': 'Кремовий',
-  'peach': 'Персиковий'
+  'peach': 'Персиковий',
+  // translit variants
+  'chervonij': 'Червоний',
+  'rozhevij': 'Рожевий',
+  'rozhevyj': 'Рожевий',
+  'bilyj': 'Білий',
+  'zhovtyj': 'Жовтий',
+  'zhyovtyj': 'Жовтий',
+  'fioletovyj': 'Фіолетовий',
+  'fioletovij': 'Фіолетовий',
+  'synij': 'Синій',
+  'golubyj': 'Голубий',
+  'oranzhevyj': 'Помаранчевий',
+  'pomaranchevyj': 'Помаранчевий',
+  'zelenyj': 'Зелений'
 };
 
 // Функція для отримання кольору
@@ -236,7 +251,7 @@ export default function ProductFilters({
                   <MenuItem key={variety.documentId} value={variety.name}>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography>🌸</Typography>
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: theme.palette.grey[500] }} />
                         {variety.name}
                       </Box>
                       <Typography variant="caption" color="textSecondary">

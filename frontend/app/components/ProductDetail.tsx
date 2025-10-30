@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import FlowerSpinner from './FlowerSpinner';
 import {
   Box,
   Container,
@@ -63,6 +64,7 @@ type GqlProduct = {
   color?: string;
   image: GqlImage[];
   varieties: GqlVariety[];
+  availableQuantity?: number;
   createdAt: string;
   updatedAt: string;
   publishedAt: string;
@@ -89,6 +91,22 @@ const colorMapping: Record<string, string> = {
 const translateColor = (color: string): string => {
   return colorMapping[color.toLowerCase()] || color;
 };
+
+// Мапінг кольору до HEX фону для бейджа
+const colorBg: Record<string, string> = {
+  'червоний': '#ffebee',
+  'рожевий': '#fce4ec',
+  'білий': '#fafafa',
+  'жовтий': '#fff8e1',
+  'фіолетовий': '#f3e5f5',
+  'оранжевий': '#fff3e0',
+  'синій': '#e3f2fd',
+  'зелений': '#e8f5e9',
+  'кремовий': '#fffde7',
+  'бордовий': '#fbe9e7',
+  'мікс': '#ede7f6',
+};
+const getColorBg = (c?: string) => (c ? colorBg[(translateColor(c) || '').toLowerCase()] || '#e8f5e9' : '#e8f5e9');
 
 // Мапінг колекцій з латиниці на українську
 const collectionMapping: Record<string, string> = {
@@ -224,18 +242,11 @@ export default function ProductDetail({ productId }: { productId: string }) {
     return (
       <Box sx={{ py: { xs: 4, md: 6 }, backgroundColor: 'background.default' }}>
         <Container maxWidth="xl">
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            minHeight: '400px',
-            flexDirection: 'column',
-            gap: 2
-          }}>
-            <Typography variant="h6" sx={{ fontFamily: 'var(--font-inter)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px', flexDirection: 'column', gap: 2 }}>
+            <FlowerSpinner size={64} />
+            <Typography variant="h6" sx={{ fontFamily: 'var(--font-inter)', color: 'text.secondary' }}>
               Завантаження...
             </Typography>
-            <Box sx={{ fontSize: '3rem' }}>🌸</Box>
           </Box>
         </Container>
       </Box>
@@ -487,213 +498,87 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 {data.price} ₴
               </Typography>
 
-              {/* Product Info */}
-              <Box sx={{ mb: 4, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {data.color && (
-                  <Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 600,
-                        mb: 1,
-                        color: 'text.primary',
-                        fontFamily: 'var(--font-inter)',
-                      }}
-                    >
-                      Колір
-                    </Typography>
-                    <Link
-                      href={`/catalog?color=${encodeURIComponent(translateColor(data.color))}`}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <Box 
-                        sx={{ 
-                          display: 'inline-block',
-                          px: 2, 
-                          py: 1, 
-                          backgroundColor: 'grey.100',
-                          borderRadius: 2, 
-                          fontSize: '0.875rem',
-                          fontWeight: 500,
-                          fontFamily: 'var(--font-inter)',
-                          border: '1px solid',
-                          borderColor: 'grey.300',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease-in-out',
-                          '&:hover': {
-                            backgroundColor: 'primary.light',
-                            borderColor: 'primary.main',
-                            color: 'primary.main',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          }
-                        }}
-                      >
-                        {translateColor(data.color)}
-                      </Box>
-                    </Link>
-                  </Box>
-                )}
-
-                {/* Колекції видалені з нової структури Product */}
-              </Box>
-
-              {/* Composition */}
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 2,
-                    color: 'text.primary',
-                    fontFamily: 'var(--font-inter)',
-                  }}
-                >
-                  Сорти квітів у букеті
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
-                  {data.varieties?.map((variety) => (
-                    <Link
-                      key={variety.documentId}
-                      href={`/catalog?variety=${encodeURIComponent(variety.name)}`}
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <Box 
-                        sx={{ 
-                          px: 2, 
-                          py: 1, 
-                          backgroundColor: 'primary.main',
-                          color: 'white',
-                          borderRadius: 3, 
-                          fontSize: '0.875rem',
-                          fontWeight: 500,
-                          fontFamily: 'var(--font-inter)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                          transition: 'all 0.2s ease-in-out',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            backgroundColor: 'primary.dark',
-                          }
-                        }}
-                      >
-                        {variety.name}
-                      </Box>
-                    </Link>
-                  ))}
-                </Box>
-                {data.description && (
-                  <Box sx={{ 
-                    p: 3, 
-                    backgroundColor: 'grey.50', 
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'grey.200'
-                  }}>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        color: 'text.secondary', 
-                        lineHeight: 1.7, 
-                        fontFamily: 'var(--font-inter)',
-                        whiteSpace: 'pre-line'
-                      }}
-                    >
-                      {extractTextFromRichText(data.description)}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Delivery */}
-              <Box sx={{ mb: 4 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 2,
-                    color: 'text.primary',
-                    fontFamily: 'var(--font-inter)',
-                  }}
-                >
-                  Доставка
-                </Typography>
+              {/* Short description under title/price */}
+              {data.description && (
                 <Typography
                   variant="body1"
-                  sx={{
-                    color: 'text.secondary',
-                    lineHeight: 1.6,
-                    fontFamily: 'var(--font-inter)',
-                  }}
+                  sx={{ color: 'text.secondary', mb: 3, whiteSpace: 'pre-line', fontFamily: 'var(--font-inter)' }}
                 >
+                  {extractTextFromRichText(data.description)}
+                </Typography>
+              )}
+
+              {/* Info grid: Колір (ліворуч), Сорти (праворуч) */}
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 6, md: 6 }}>
+                  {data.color && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                        Колір
+                      </Typography>
+                      <Link href={`/catalog?color=${encodeURIComponent(translateColor(data.color))}`} style={{ textDecoration: 'none' }}>
+                        <Box sx={{ display: 'inline-block', px: 2, py: 1, backgroundColor: getColorBg(data.color), borderRadius: 2, fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--font-inter)', border: '1px solid', borderColor: 'grey.300', cursor: 'pointer' }}>
+                          {translateColor(data.color)}
+                        </Box>
+                      </Link>
+                    </Box>
+                  )}
+                </Grid>
+                <Grid size={{ xs: 6, md: 6 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                    Сорти в букеті
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                    {data.varieties?.map((variety) => (
+                      <Link key={variety.documentId} href={`/catalog?variety=${encodeURIComponent(variety.name)}`} style={{ textDecoration: 'none' }}>
+                        <Box sx={{ px: 2, py: 1, backgroundColor: 'primary.main', color: 'white', borderRadius: 3, fontSize: '0.875rem', fontWeight: 500, fontFamily: 'var(--font-inter)' }}>
+                          {variety.name}
+                        </Box>
+                      </Link>
+                    ))}
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Delivery below grid */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                  Доставка
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6, fontFamily: 'var(--font-inter)' }}>
                   Доставка та умови узгоджуються під час оформлення замовлення.
                 </Typography>
               </Box>
 
-              {/* Quantity Selector */}
-              <Box sx={{ mb: 4 }}>
+              {/* Availability */}
+              <Box sx={{ mb: 2 }}>
                 <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 600,
-                    mb: 2,
-                    color: 'text.primary',
-                    fontFamily: 'var(--font-inter)',
-                  }}
+                  variant="body1"
+                  sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'var(--font-inter)' }}
                 >
-                  Обрати кількість
+                  В наявності: {typeof data.availableQuantity === 'number' ? data.availableQuantity : '—'}
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <IconButton
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'grey.300',
-                      borderRadius: 1,
-                      width: 40,
-                      height: 40,
-                    }}
-                  >
-                    <RemoveIcon />
-                  </IconButton>
-                  <TextField
-                    value={quantity}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value) || 1;
-                      handleQuantityChange(value);
-                    }}
-                    inputProps={{
-                      style: { textAlign: 'center', width: '60px' },
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        width: 80,
-                        height: 40,
-                      },
-                    }}
-                  />
-                  <IconButton
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'grey.300',
-                      borderRadius: 1,
-                      width: 40,
-                      height: 40,
-                    }}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                </Box>
               </Box>
 
-              {/* Add to Bag Button */}
-              <Button
-                variant="outlined"
-                size="large"
-                startIcon={<ShoppingCartIcon />}
-                onClick={() => {
+              {/* Bottom row: Quantity left, Add to cart right (or left if no quantity) */}
+              <Grid container spacing={2} alignItems="center" sx={{ mt: 2 }}>
+                <Grid size={{ xs: 6, md: 6 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton onClick={() => handleQuantityChange(quantity - 1)} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, width: 40, height: 40 }}>
+                      <RemoveIcon />
+                    </IconButton>
+                    <TextField value={quantity} onChange={(e) => { const value = parseInt(e.target.value) || 1; handleQuantityChange(value); }} inputProps={{ style: { textAlign: 'center', width: '60px' }, }} sx={{ '& .MuiOutlinedInput-root': { width: 80, height: 40 } }} />
+                    <IconButton onClick={() => handleQuantityChange(quantity + 1)} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, width: 40, height: 40 }}>
+                      <AddIcon />
+                    </IconButton>
+                  </Box>
+                </Grid>
+                <Grid size={{ xs: 6, md: 6 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-start' } }}>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    startIcon={<ShoppingCartIcon />}
+                    onClick={() => {
                   if (data) {
                     const imageUrl = data.image?.[0]?.url ? `${API_URL}${data.image[0].url}` : undefined;
                     console.log('API_URL:', API_URL);
@@ -710,26 +595,12 @@ export default function ProductDetail({ productId }: { productId: string }) {
                     openCart();
                   }
                 }}
-                sx={{
-                  px: 4,
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  borderRadius: 0,
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
-                  backgroundColor: 'background.default',
-                  borderWidth: 2,
-                  textTransform: 'none',
-                  fontFamily: 'var(--font-inter)',
-                  '&:hover': {
-                    borderWidth: 2,
-                    backgroundColor: 'primary.main',
-                    color: 'background.default',
-                  },
-                }}
-              >
-                У кошик
-              </Button>
+                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem', borderRadius: 0, borderColor: 'primary.main', color: 'primary.main', backgroundColor: 'background.default', borderWidth: 2, textTransform: 'none', fontFamily: 'var(--font-inter)', '&:hover': { borderWidth: 2, backgroundColor: 'primary.main', color: 'background.default' } }}
+                  >
+                    У кошик
+                  </Button>
+                </Grid>
+              </Grid>
             </Box>
           </Grid>
         </Grid>
@@ -756,7 +627,7 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={relatedProduct.documentId}>
                   <Link href={`/product/${relatedProduct.slug}`} style={{ textDecoration: 'none' }}>
                     <Card
-                      className="product-card-hover"
+                      className="product-card-hover glass-card"
                       sx={{
                         height: '100%',
                         display: 'flex',
@@ -764,7 +635,6 @@ export default function ProductDetail({ productId }: { productId: string }) {
                         position: 'relative',
                         borderRadius: 2,
                         overflow: 'hidden',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                         textDecoration: 'none',
                         cursor: 'pointer',
                       }}

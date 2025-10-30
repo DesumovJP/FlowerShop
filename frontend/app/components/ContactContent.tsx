@@ -88,17 +88,23 @@ export default function ContactContent() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box
                       sx={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: '50%',
-                        backgroundColor: 'primary.main',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        background: 'rgba(255,255,255,0.65)',
+                        border: '1px solid rgba(255,255,255,0.45)',
+                        boxShadow: '0 12px 28px rgba(46,125,50,0.18)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: 'primary.main',
+                        transition: 'transform 200ms ease, box-shadow 240ms ease',
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 18px 44px rgba(46,125,50,0.24)' }
                       }}
                     >
-                      <PhoneIcon />
+                      <PhoneIcon sx={{ filter: 'drop-shadow(0 2px 6px rgba(46,125,50,0.25))' }} />
                     </Box>
                     <Box>
                       <Typography
@@ -128,17 +134,23 @@ export default function ContactContent() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box
                       sx={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: '50%',
-                        backgroundColor: 'primary.main',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        background: 'rgba(255,255,255,0.65)',
+                        border: '1px solid rgba(255,255,255,0.45)',
+                        boxShadow: '0 12px 28px rgba(46,125,50,0.18)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: 'primary.main',
+                        transition: 'transform 200ms ease, box-shadow 240ms ease',
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 18px 44px rgba(46,125,50,0.24)' }
                       }}
                     >
-                      <EmailIcon />
+                      <EmailIcon sx={{ filter: 'drop-shadow(0 2px 6px rgba(46,125,50,0.25))' }} />
                     </Box>
                     <Box>
                       <Typography
@@ -168,17 +180,23 @@ export default function ContactContent() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box
                       sx={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: '50%',
-                        backgroundColor: 'primary.main',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        background: 'rgba(255,255,255,0.65)',
+                        border: '1px solid rgba(255,255,255,0.45)',
+                        boxShadow: '0 12px 28px rgba(46,125,50,0.18)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: 'primary.main',
+                        transition: 'transform 200ms ease, box-shadow 240ms ease',
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 18px 44px rgba(46,125,50,0.24)' }
                       }}
                     >
-                      <LocationOnIcon />
+                      <LocationOnIcon sx={{ filter: 'drop-shadow(0 2px 6px rgba(46,125,50,0.25))' }} />
                     </Box>
                     <Box>
                       <Typography
@@ -208,17 +226,23 @@ export default function ContactContent() {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Box
                       sx={{
-                        width: 50,
-                        height: 50,
-                        borderRadius: '50%',
-                        backgroundColor: 'primary.main',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 2,
+                        background: 'rgba(255,255,255,0.65)',
+                        border: '1px solid rgba(255,255,255,0.45)',
+                        boxShadow: '0 12px 28px rgba(46,125,50,0.18)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: 'primary.main',
+                        transition: 'transform 200ms ease, box-shadow 240ms ease',
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 18px 44px rgba(46,125,50,0.24)' }
                       }}
                     >
-                      <AccessTimeIcon />
+                      <AccessTimeIcon sx={{ filter: 'drop-shadow(0 2px 6px rgba(46,125,50,0.25))' }} />
                     </Box>
                     <Box>
                       <Typography

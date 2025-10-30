@@ -78,89 +78,30 @@ interface SocialIconsProps {
 }
 
 export default function SocialIcons({ size = 24, color = 'currentColor' }: SocialIconsProps) {
+  const btnSx = {
+    width: 36,
+    height: 36,
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    color: 'text.primary',
+    '&:hover': {
+      backgroundColor: 'rgba(0,0,0,0.06)',
+      transform: 'translateY(-1px)',
+    },
+    transition: 'all 0.2s ease-in-out',
+  } as const;
   return (
     <Box sx={{ display: 'flex', gap: 1 }}>
-      <IconButton
-        size="small"
-        sx={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          backgroundColor: 'transparent',
-          border: '1px solid',
-          borderColor: 'text.primary',
-          color: 'text.primary',
-          '&:hover': {
-            backgroundColor: 'text.primary',
-            color: 'background.default',
-            transform: 'scale(1.1)',
-          },
-          transition: 'all 0.3s ease-in-out',
-        }}
-      >
+      <IconButton size="small" sx={btnSx} component="a" href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
         <InstagramIcon size={size} color={color} />
       </IconButton>
-      
-      <IconButton
-        size="small"
-        sx={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          backgroundColor: 'transparent',
-          border: '1px solid',
-          borderColor: 'text.primary',
-          color: 'text.primary',
-          '&:hover': {
-            backgroundColor: 'text.primary',
-            color: 'background.default',
-            transform: 'scale(1.1)',
-          },
-          transition: 'all 0.3s ease-in-out',
-        }}
-      >
+      <IconButton size="small" sx={btnSx} component="a" href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
         <FacebookIcon size={size} color={color} />
       </IconButton>
-      
-      <IconButton
-        size="small"
-        sx={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          backgroundColor: 'transparent',
-          border: '1px solid',
-          borderColor: 'text.primary',
-          color: 'text.primary',
-          '&:hover': {
-            backgroundColor: 'text.primary',
-            color: 'background.default',
-            transform: 'scale(1.1)',
-          },
-          transition: 'all 0.3s ease-in-out',
-        }}
-      >
+      <IconButton size="small" sx={btnSx} component="a" href="https://t.me" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
         <TelegramIcon size={size} color={color} />
       </IconButton>
-      
-      <IconButton
-        size="small"
-        sx={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          backgroundColor: 'transparent',
-          border: '1px solid',
-          borderColor: 'text.primary',
-          color: 'text.primary',
-          '&:hover': {
-            backgroundColor: 'text.primary',
-            color: 'background.default',
-            transform: 'scale(1.1)',
-          },
-          transition: 'all 0.3s ease-in-out',
-        }}
-      >
+      <IconButton size="small" sx={btnSx} component="a" href="https://tiktok.com" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
         <TikTokIcon size={size} color={color} />
       </IconButton>
     </Box>

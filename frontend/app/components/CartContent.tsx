@@ -46,6 +46,9 @@ export default function CartContent() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
 
   // Функція для очищення localStorage (для тестування)
   const clearLocalStorage = () => {
@@ -124,7 +127,8 @@ export default function CartContent() {
             </Box>
 
             {/* Cart Items */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card className="glass-card" sx={{ p: 2, borderRadius: 0 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               {items.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 8 }}>
                   <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
@@ -136,30 +140,11 @@ export default function CartContent() {
                 </Box>
               ) : (
                 <>
-                  {/* Debug button - тимчасово */}
-                  <Button 
-                    onClick={clearLocalStorage}
-                    variant="outlined"
-                    color="error"
-                    size="small"
-                    sx={{ mb: 2 }}
-                  >
-                    Очистити localStorage (Debug)
-                  </Button>
                   {items.map((item, index) => (
-                  <Box key={item.id}>
+                  <Box key={item.id} sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
                       {/* Product Image */}
-                      <Card
-                        sx={{
-                          width: 120,
-                          height: 120,
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                          flexShrink: 0,
-                        }}
-                      >
+                      <Card className="glass-card" sx={{ width: 120, height: 120, borderRadius: 0, overflow: 'hidden', flexShrink: 0 }}>
                         {item.imageUrl ? (
                           <Image
                             src={item.imageUrl}
@@ -305,15 +290,25 @@ export default function CartContent() {
                     </Box>
                   </Box>
                   
-                  {/* Divider between items */}
-                  {index < items.length - 1 && (
-                    <Divider sx={{ mt: 3, borderColor: 'grey.300' }} />
-                  )}
                 </Box>
                   ))}
                 </>
               )}
-            </Box>
+              </Box>
+            </Card>
+
+            {/* Debug button - тимчасово: перенесено під блок з картками */}
+            {items.length > 0 && (
+              <Button 
+                onClick={clearLocalStorage}
+                variant="outlined"
+                color="error"
+                size="small"
+                sx={{ mt: 2 }}
+              >
+                Очистити localStorage (Debug)
+              </Button>
+            )}
           </Grid>
 
           {/* Right Section - Total */}
@@ -335,200 +330,9 @@ export default function CartContent() {
                 </Typography>
                 <Divider sx={{ borderColor: 'grey.300' }} />
               </Box>
-
-              {/* Order Summary */}
-              <Card
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                  backgroundColor: 'background.paper',
-                }}
-              >
-                {/* Items */}
-                {items.map((item) => (
-                  <Box
-                    key={item.id}
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      mb: 2,
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: 'text.primary',
-                        fontFamily: 'var(--font-inter)',
-                      }}
-                    >
-                      {item.name}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: 'text.primary',
-                        fontWeight: 500,
-                        fontFamily: 'var(--font-inter)',
-                      }}
-                    >
-                      {item.price * item.quantity}₴
-                    </Typography>
-                  </Box>
-                ))}
-
-                <Divider sx={{ my: 2, borderColor: 'grey.300' }} />
-
-                {/* Delivery */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
-                >
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: 'text.primary',
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    Доставка:
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color: deliveryCost === 0 ? 'success.main' : 'text.primary',
-                      fontWeight: 500,
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    {deliveryCost === 0 ? 'Безкоштовно' : `${deliveryCost}₴`}
-                  </Typography>
-                </Box>
-
-                {/* Delivery threshold info */}
-                {subtotal < deliveryThreshold && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      mb: 2,
-                      p: 1.5,
-                      backgroundColor: '#81C784',
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: '#66BB6A',
-                    }}
-                  >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'white',
-                        fontFamily: 'var(--font-inter)',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      До безкоштовної доставки залишилось:
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'white',
-                        fontWeight: 600,
-                        fontFamily: 'var(--font-inter)',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      {deliveryThreshold - subtotal}₴
-                    </Typography>
-                  </Box>
-                )}
-
-
-                <Divider sx={{ my: 2, borderColor: 'grey.300' }} />
-
-                {/* Total */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 3,
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: 'text.primary',
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    Всього:
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: 'primary.main',
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    {total}₴
-                  </Typography>
-                </Box>
-
-                {/* Pay Button */}
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  size="large"
-                  onClick={handleSubmitOrder}
-                  disabled={isSubmitting || items.length === 0}
-                  sx={{
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    borderRadius: 2,
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    backgroundColor: 'background.default',
-                    borderWidth: 2,
-                    textTransform: 'none',
-                    fontFamily: 'var(--font-inter)',
-                    '&:hover': {
-                      borderWidth: 2,
-                      backgroundColor: 'primary.main',
-                      color: 'background.default',
-                    },
-                  }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <CircularProgress size={20} sx={{ mr: 1 }} />
-                      Відправляємо...
-                    </>
-                  ) : (
-                    'Оформити замовлення'
-                  )}
-                </Button>
-              </Card>
-
-              {/* Customer Info Form */}
+              {/* Customer Info Form (вище) */}
               {items.length > 0 && (
-                <Card
-                  sx={{
-                    p: 3,
-                    mt: 3,
-                    borderRadius: 2,
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                    backgroundColor: 'background.paper',
-                  }}
-                >
+                <Card className="glass-card" sx={{ p: 3, borderRadius: 0, mb: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
                     Дані для доставки
                   </Typography>
@@ -546,6 +350,7 @@ export default function CartContent() {
                       value={customerInfo.fullName}
                       onChange={(e) => updateCustomerInfo({ fullName: e.target.value })}
                       required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                     />
 
                     <TextField
@@ -554,6 +359,7 @@ export default function CartContent() {
                       value={customerInfo.phone}
                       onChange={(e) => updateCustomerInfo({ phone: e.target.value })}
                       required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                     />
 
                     <TextField
@@ -563,6 +369,7 @@ export default function CartContent() {
                       value={customerInfo.email}
                       onChange={(e) => updateCustomerInfo({ email: e.target.value })}
                       required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                     />
 
                     <TextField
@@ -573,6 +380,7 @@ export default function CartContent() {
                       value={customerInfo.deliveryAddress}
                       onChange={(e) => updateCustomerInfo({ deliveryAddress: e.target.value })}
                       required
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                     />
 
                     <FormControl component="fieldset">
@@ -585,9 +393,116 @@ export default function CartContent() {
                         <FormControlLabel value="cash" control={<Radio />} label="Готівкою при отриманні" />
                       </RadioGroup>
                     </FormControl>
+
+                    {customerInfo.paymentMethod === 'card' && (
+                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                        <TextField 
+                          fullWidth 
+                          label="Номер картки" 
+                          value={cardNumber} 
+                          onChange={(e) => setCardNumber(e.target.value)} 
+                          placeholder="1234 5678 9012 3456"
+                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+                          slotProps={{ inputLabel: { shrink: true } } as any}
+                          // Span full width across both columns on sm+
+                          style={{ gridColumn: '1 / -1' }}
+                        />
+                        <TextField 
+                          fullWidth 
+                          label="Термін дії (MM/YY)" 
+                          value={cardExpiry} 
+                          onChange={(e) => setCardExpiry(e.target.value)} 
+                          placeholder="MM/YY"
+                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+                          slotProps={{ inputLabel: { shrink: true } } as any}
+                        />
+                        <TextField 
+                          fullWidth 
+                          label="CVV" 
+                          value={cardCvv} 
+                          onChange={(e) => setCardCvv(e.target.value)} 
+                          placeholder="***"
+                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+                          slotProps={{ inputLabel: { shrink: true } } as any}
+                        />
+                      </Box>
+                    )}
                   </Box>
                 </Card>
               )}
+
+              {/* Order Summary (ниже) */}
+              <Card className="glass-card" sx={{ p: 3, borderRadius: 0 }}>
+                {/* Items */}
+                {items.map((item) => (
+                  <Box
+                    key={item.id}
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+                  >
+                    <Typography variant="body1" sx={{ color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                      {item.name}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, fontFamily: 'var(--font-inter)' }}>
+                      {item.price * item.quantity}₴
+                    </Typography>
+                  </Box>
+                ))}
+
+                <Divider sx={{ my: 2, borderColor: 'grey.300' }} />
+
+                {/* Delivery */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="body1" sx={{ color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                    Доставка:
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: deliveryCost === 0 ? 'success.main' : 'text.primary', fontWeight: 500, fontFamily: 'var(--font-inter)' }}>
+                    {deliveryCost === 0 ? 'Безкоштовно' : `${deliveryCost}₴`}
+                  </Typography>
+                </Box>
+
+                {/* Delivery threshold info */}
+                {subtotal < deliveryThreshold && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, p: 1.5, backgroundColor: '#81C784', borderRadius: 1, border: '1px solid', borderColor: '#66BB6A' }}>
+                    <Typography variant="body2" sx={{ color: 'white', fontFamily: 'var(--font-inter)', fontSize: '0.875rem' }}>
+                      До безкоштовної доставки залишилось:
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 600, fontFamily: 'var(--font-inter)', fontSize: '0.875rem' }}>
+                      {deliveryThreshold - subtotal}₴
+                    </Typography>
+                  </Box>
+                )}
+
+                <Divider sx={{ my: 2, borderColor: 'grey.300' }} />
+
+                {/* Total */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700, fontFamily: 'var(--font-inter)' }}>
+                    Всього:
+                  </Typography>
+                  <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 700, fontFamily: 'var(--font-inter)' }}>
+                    {total}₴
+                  </Typography>
+                </Box>
+
+                {/* Pay Button */}
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  size="large"
+                  onClick={handleSubmitOrder}
+                  disabled={isSubmitting || items.length === 0}
+                  sx={{ py: 1.5, fontSize: '1.1rem', borderRadius: 2, borderColor: 'primary.main', color: 'primary.main', backgroundColor: 'background.default', borderWidth: 2, textTransform: 'none', fontFamily: 'var(--font-inter)', '&:hover': { borderWidth: 2, backgroundColor: 'primary.main', color: 'background.default' } }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      Відправляємо...
+                    </>
+                  ) : (
+                    `Оформити замовлення${getTotalItems() > 1 ? ` (${getTotalItems()})` : ''}`
+                  )}
+                </Button>
+              </Card>
             </Box>
           </Grid>
         </Grid>
