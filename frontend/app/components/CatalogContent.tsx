@@ -16,8 +16,6 @@ import {
   MenuItem,
   TextField,
   InputAdornment,
-  Breadcrumbs,
-  Link,
   useMediaQuery,
   CircularProgress,
   useTheme,
@@ -28,12 +26,12 @@ import {
   Favorite as FavoriteIcon,
   ShoppingCart as ShoppingCartIcon,
   Search as SearchIcon,
-  NavigateNext as NavigateNextIcon,
   FilterList as FilterIcon,
 } from '@mui/icons-material';
 import NextLink from 'next/link';
 import ProductCard from './ProductCard';
 import ProductFilters from './ProductFilters';
+import Breadcrumbs from './Breadcrumbs';
 
 type GqlImage = { 
   documentId: string;
@@ -208,16 +206,13 @@ export default function CatalogContent() {
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default }}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
-            <Link component={NextLink} href="/" color="inherit">
-              Головна
-            </Link>
-            <Typography color="text.primary">Каталог</Typography>
-          </Breadcrumbs>
-          {/* Прибрали дублюючий заголовок під хлібними крихтами */}
-        </Box>
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: 'Головна', href: '/' },
+            { label: 'Каталог', isActive: true },
+          ]}
+        />
 
         {/* Filters */}
         <ProductFilters

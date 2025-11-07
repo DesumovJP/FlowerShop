@@ -109,11 +109,13 @@ export default function CategoriesSection() {
             variant="h2"
             component="h2"
             sx={{
-              fontSize: { xs: '2rem', md: '2.5rem', lg: '3rem' },
+              fontSize: { xs: '1.875rem', md: '2.375rem', lg: '2.75rem' },
               fontWeight: 700,
               color: 'text.primary',
-              mb: 3,
+              mb: { xs: 4, md: 6 },
               fontFamily: 'var(--font-playfair)',
+              lineHeight: { xs: 1.25, md: 1.2 },
+              letterSpacing: { xs: '-0.01em', md: '-0.015em' },
             }}
           >
             Каталог квіткових насолод для будь-якої нагоди

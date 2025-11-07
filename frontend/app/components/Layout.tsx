@@ -34,6 +34,7 @@ import SocialIcons from './SocialIcons';
 import { useCartStore } from '../store/cartStore';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -226,52 +227,128 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="sticky" elevation={0}>
+      <AppBar position="sticky" elevation={0} sx={{ backgroundColor: '#2e7d32', position: 'relative', overflow: 'visible' }}>
+
         <Container maxWidth="xl">
           <Toolbar sx={{ 
             justifyContent: isMobile ? 'space-between' : 'space-between', 
             py: 1,
             position: 'relative',
+            zIndex: 1,
+            overflow: 'visible',
+            minHeight: { xs: '64px', sm: '80px', md: '96px' },
           }}>
             {/* Mobile Layout */}
             {isMobile ? (
               <>
                 {/* Hamburger Menu - Left */}
                 <IconButton
-                  color="inherit"
                   aria-label="open drawer"
                   edge="start"
                   onClick={handleDrawerToggle}
-                  sx={{ padding: 0.5 }}
+                  sx={{ 
+                    padding: 0.5, 
+                    color: 'white',
+                    position: 'relative',
+                    zIndex: 2,
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      opacity: 0.85,
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      transform: 'scale(1.05)',
+                    },
+                  }}
                 >
-                  <MenuIcon fontSize="small" />
+                  <MenuIcon fontSize="small" sx={{ color: 'white' }} />
                 </IconButton>
 
+
                 {/* Logo - Center */}
-                <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography
-                    variant="caption"
+                <Box sx={{ 
+                  position: 'absolute', 
+                  left: '50%', 
+                  top: 0,
+                  transform: 'translateX(-50%)', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  zIndex: 1,
+                  overflow: 'visible',
+                  width: { xs: '22%', sm: '25%', md: '28%' },
+                  height: '100%',
+                  maxWidth: { xs: '140px', sm: '160px', md: '180px' },
+                }}>
+                  
+                  {/* Ботанічне зображення як фон під текстом */}
+                  <Box
                     sx={{
-                      color: 'primary.main',
-                      fontWeight: 600,
-                      fontSize: '0.65rem',
-                      letterSpacing: '0.02em',
-                      lineHeight: 1,
-                      mb: '-0.2rem',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '125%',
+                      height: '100%',
+                      opacity: 0.5,
+                      pointerEvents: 'none',
+                      zIndex: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    квіти
-                  </Typography>
+                    <Image
+                      src="http://localhost:1337/uploads/Copilot_20251107_143007_b34bba0c51.png"
+                      alt="Botanical decoration"
+                      width={180}
+                      height={180}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.2))',
+                      }}
+                    />
+                  </Box>
+                  
                   <Typography
                     variant="h6"
                     component={Link}
                     href="/"
                     sx={{
                       fontWeight: 700,
-                      color: 'text.primary',
+                      color: 'white',
                       textDecoration: 'none',
-                      fontSize: '1.1rem',
-                      fontFamily: 'var(--font-playfair)'
+                      fontSize: '1.5rem',
+                      fontFamily: 'var(--font-playfair)',
+                      mb: '-0.2rem',
+                      position: 'relative',
+                      zIndex: 2,
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 0, 0, 0.4)',
+                      transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    квіти
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '0.65rem',
+                      letterSpacing: '0.02em',
+                      lineHeight: 1,
+                      fontFamily: 'var(--font-inter)',
+                      position: 'relative',
+                      zIndex: 2,
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 0, 0, 0.4)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        opacity: 0.9,
+                      },
                     }}
                   >
                     Phoenix
@@ -280,14 +357,45 @@ export default function Layout({ children }: LayoutProps) {
 
                 {/* Shopping Cart - Right */}
                 <IconButton
-                  color="inherit" 
                   component={Link}
                   href="/cart"
-                  sx={{ padding: 0.5 }}
+                  sx={{ 
+                    padding: 0.5, 
+                    color: 'white',
+                    position: 'relative',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      opacity: 0.85,
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    },
+                  }}
                 >
-                  <Badge badgeContent={getTotalItems()} color="secondary">
-                    <ShoppingCartIcon fontSize="medium" />
-                  </Badge>
+                  <ShoppingCartIcon sx={{ color: 'white', fontSize: '1.75rem', '& path': { strokeWidth: 1.5 } }} />
+                  {getTotalItems() > 0 && (
+                    <Box
+                      className={getTotalItems() > 0 ? 'cart-badge-pulse' : ''}
+                      sx={{
+                        position: 'absolute',
+                        top: -4,
+                        right: -4,
+                        backgroundColor: '#ff4444',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        minWidth: '18px',
+                        height: '18px',
+                        padding: '0 5px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid white',
+                        zIndex: 1,
+                      }}
+                    >
+                      {getTotalItems()}
+                    </Box>
+                  )}
                 </IconButton>
               </>
             ) : (
@@ -300,9 +408,31 @@ export default function Layout({ children }: LayoutProps) {
                       component={Link}
                       href={item.href}
                       sx={{ 
-                        color: 'text.primary', 
+                        color: 'white', 
                         fontWeight: 500,
                         fontSize: '1rem',
+                        position: 'relative',
+                        textTransform: 'none',
+                        padding: '8px 16px',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&::after': {
+                          content: '""',
+                          position: 'absolute',
+                          bottom: 0,
+                          left: '50%',
+                          transform: 'translateX(-50%) scaleX(0)',
+                          width: '60%',
+                          height: '2px',
+                          backgroundColor: 'white',
+                          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        },
+                        '&:hover': {
+                          color: 'white',
+                          opacity: 0.9,
+                          '&::after': {
+                            transform: 'translateX(-50%) scaleX(1)',
+                          },
+                        },
                       }}
                     >
                       {item.label}
@@ -310,31 +440,92 @@ export default function Layout({ children }: LayoutProps) {
                   ))}
                 </Box>
 
+
                 {/* Logo - Center */}
-                <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography
-                    variant="caption"
+                <Box sx={{ 
+                  position: 'absolute', 
+                  left: '50%', 
+                  top: 0,
+                  transform: 'translateX(-50%)', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  zIndex: 1,
+                  overflow: 'visible',
+                  width: { xs: '25%', sm: '28%', md: '31%' },
+                  height: '100%',
+                }}>
+                  
+                  {/* Ботанічне зображення як фон під текстом */}
+                  <Box
                     sx={{
-                      color: 'primary.main',
-                      fontWeight: 600,
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.02em',
-                      lineHeight: 1,
-                      mb: '-0.25rem',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '125%',
+                      height: '100%',
+                      opacity: 0.5,
+                      pointerEvents: 'none',
+                      zIndex: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    квіти
-                  </Typography>
+                    <Image
+                      src="http://localhost:1337/uploads/Copilot_20251107_143007_b34bba0c51.png"
+                      alt="Botanical decoration"
+                      width={200}
+                      height={200}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.2))',
+                      }}
+                    />
+                  </Box>
+                  
                   <Typography
                     variant="h6"
                     component={Link}
                     href="/"
                     sx={{
                       fontWeight: 700,
-                      color: 'text.primary',
+                      color: 'white',
                       textDecoration: 'none',
-                      fontSize: '1.25rem',
-                      fontFamily: 'var(--font-playfair)'
+                      fontSize: '1.75rem',
+                      fontFamily: 'var(--font-playfair)',
+                      mb: '-0.25rem',
+                      position: 'relative',
+                      zIndex: 2,
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 0, 0, 0.4)',
+                      transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        opacity: 0.9,
+                      },
+                    }}
+                  >
+                    квіти
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.02em',
+                      lineHeight: 1,
+                      fontFamily: 'var(--font-inter)',
+                      position: 'relative',
+                      zIndex: 2,
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 0, 0, 0.4)',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        opacity: 0.9,
+                      },
                     }}
                   >
                     Phoenix
@@ -344,14 +535,45 @@ export default function Layout({ children }: LayoutProps) {
                 {/* Action Buttons - Right */}
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <IconButton 
-                    color="inherit" 
                     component={Link}
                     href="/cart"
-                    sx={{ padding: 1 }}
+                    sx={{ 
+                      padding: 1, 
+                      color: 'white',
+                      position: 'relative',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        opacity: 0.85,
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      },
+                    }}
                   >
-                    <Badge badgeContent={mounted ? getTotalItems() : 0} color="secondary">
-                      <ShoppingCartIcon fontSize="medium" />
-                    </Badge>
+                    <ShoppingCartIcon sx={{ color: 'white', fontSize: '1.75rem', '& path': { strokeWidth: 1.5 } }} />
+                    {mounted && getTotalItems() > 0 && (
+                      <Box
+                        className={mounted && getTotalItems() > 0 ? 'cart-badge-pulse' : ''}
+                        sx={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          backgroundColor: '#ff4444',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          minWidth: '18px',
+                          height: '18px',
+                          padding: '0 5px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '2px solid white',
+                          zIndex: 1,
+                        }}
+                      >
+                        {getTotalItems()}
+                      </Box>
+                    )}
                   </IconButton>
                 </Box>
               </>

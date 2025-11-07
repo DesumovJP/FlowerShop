@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // GET - отримати звіти про зміни
 export async function GET(request: NextRequest) {
@@ -19,18 +20,35 @@ export async function GET(request: NextRequest) {
       filters += `&filters[worker][id][$eq]=${worker}`;
     }
     if (month && year) {
-      const startDate = `${year}-${month.padStart(2, '0')}-01`;
-      const endDate = `${year}-${month.padStart(2, '0')}-31`;
-      filters += `&filters[date][$between][0]=${startDate}&filters[date][$between][1]=${endDate}`;
+      // Використовуємо правильний формат для фільтрації по місяцю
+      const monthNum = parseInt(month, 10);
+      const yearNum = parseInt(year, 10);
+      
+      // Отримуємо перший і останній день місяця
+      const startDate = new Date(yearNum, monthNum - 1, 1);
+      const endDate = new Date(yearNum, monthNum, 0); // Останній день місяця
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      filters += `&filters[date][$gte]=${startDateStr}&filters[date][$lte]=${endDateStr}`;
     }
 
     const url = `${STRAPI_URL}/api/shift-reports?populate=worker${filters}&sort=date:desc`;
     console.log('🔍 Fetching shift reports from:', url);
     
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Додаємо токен тільки якщо він є
+    if (STRAPI_TOKEN) {
+      headers['Authorization'] = `Bearer ${STRAPI_TOKEN}`;
+    }
+    
     const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
+      cache: 'no-store',
     });
 
     console.log('📊 Response status:', response.status);
@@ -38,16 +56,28 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Strapi error:', response.status, errorText);
-      throw new Error(`Failed to fetch shift reports: ${response.status} - ${errorText}`);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch shift reports',
+          details: errorText,
+          status: response.status
+        },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
     console.log('📋 Strapi response data:', data);
+    
+    // Перетворюємо дані в очікуваний формат (якщо потрібно)
     return NextResponse.json(data);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching shift reports:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch shift reports' },
+      { 
+        error: 'Failed to fetch shift reports',
+        message: error?.message || 'Unknown error'
+      },
       { status: 500 }
     );
   }

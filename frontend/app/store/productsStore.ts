@@ -84,7 +84,8 @@ export const useProductsStore = create<ProductsStore>()(
         
         try {
           console.log('🛒 Store: Fetching products from API...');
-          const response = await fetch('/api/products?page=1&pageSize=1000', { cache: 'no-store' });
+          // Використовуємо адмін endpoint, який не фільтрує по publishedAt
+          const response = await fetch('/api/admin/products?page=1&pageSize=1000', { cache: 'no-store' });
           
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);

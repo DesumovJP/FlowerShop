@@ -1729,7 +1729,18 @@ export default function ShiftReportModal({
               border: 1,
               borderColor: 'grey.200'
             }}>
-              <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 'bold' }}>
+              <Typography 
+                variant="h5" 
+                gutterBottom 
+                sx={{ 
+                  mb: { xs: 2, sm: 2.5, md: 3 }, 
+                  fontWeight: 700,
+                  fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.01em',
+                  lineHeight: 1.2,
+                }}
+              >
                 {mode === 'create' ? 'Створення зміни' : 'Закриття зміни'}
               </Typography>
               
@@ -2335,19 +2346,68 @@ export default function ShiftReportModal({
         }
       }}
     >
-      <DialogTitle sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
+      <DialogTitle sx={{ p: { xs: 2, sm: 2.5, md: 3 }, borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-          <Typography variant="h4" component="h1" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: { xs: 0.75, sm: 1, md: 1.5 },
+              fontSize: { xs: '1.1rem', sm: '1.5rem', md: '2.125rem' },
+              fontFamily: 'var(--font-inter)',
+              fontWeight: 700,
+              lineHeight: 1.2,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
             {(() => {
               if (mode === 'view') {
-                return <Box component="span" sx={{ color: 'success.main', fontWeight: 700, mr: 1 }}>(Завершена ✅)</Box>;
+                return (
+                  <Box 
+                    component="span" 
+                    sx={{ 
+                      color: 'success.main', 
+                      fontWeight: 700, 
+                      mr: { xs: 0.5, sm: 0.75, md: 1 },
+                      fontSize: { xs: '0.85rem', sm: '1rem', md: '1.25rem' },
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                  >
+                    (Завершена ✅)
+                  </Box>
+                );
               }
               if (mode === 'create') {
-                return <Box component="span" sx={{ color: 'info.main', fontWeight: 700, mr: 1 }}>(Створити)</Box>;
+                return (
+                  <Box 
+                    component="span" 
+                    sx={{ 
+                      color: 'info.main', 
+                      fontWeight: 700, 
+                      mr: { xs: 0.5, sm: 0.75, md: 1 },
+                      fontSize: { xs: '0.85rem', sm: '1rem', md: '1.25rem' },
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                  >
+                    (Створити)
+                  </Box>
+                );
               }
               return null;
             })()}
-            {getTitle()}
+            <Box 
+              component="span"
+              sx={{
+                fontSize: { xs: '0.95rem', sm: '1.25rem', md: '1.5rem' },
+                fontFamily: 'var(--font-inter)',
+                fontWeight: 700,
+              }}
+            >
+              {getTitle()}
+            </Box>
           </Typography>
           <Box sx={{ display: 'flex', gap: 1, position: 'absolute', right: 0 }}>
             {/* У режимі перегляду закритої зміни прибираємо кнопки редагування та видалення */}

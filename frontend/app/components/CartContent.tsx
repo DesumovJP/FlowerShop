@@ -278,9 +278,10 @@ export default function CartContent() {
                           onClick={() => handleRemoveItem(item.id)}
                           sx={{
                             color: 'text.secondary',
+                            padding: 0.5,
                             '&:hover': {
                               color: 'error.main',
-                              backgroundColor: 'error.light',
+                              backgroundColor: 'transparent',
                             },
                           }}
                         >
@@ -297,7 +298,7 @@ export default function CartContent() {
               </Box>
             </Card>
 
-            {/* Debug button - тимчасово: перенесено під блок з картками */}
+            {/* Кнопка очищення кошика */}
             {items.length > 0 && (
               <Button 
                 onClick={clearLocalStorage}
@@ -306,7 +307,7 @@ export default function CartContent() {
                 size="small"
                 sx={{ mt: 2 }}
               >
-                Очистити localStorage (Debug)
+                Очистити кошик
               </Button>
             )}
           </Grid>

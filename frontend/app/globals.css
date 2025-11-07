@@ -137,6 +137,23 @@ body {
     0 0 0 3px rgba(46, 125, 50, 0.1);
 }
 
+/* Анімація для badge кошика */
+@keyframes cart-badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.cart-badge-pulse {
+  animation: cart-badge-pulse 2s infinite;
+}
+
 /* Глассморфізм для сайдбару */
 .glass-sidebar {
   background: rgba(255, 255, 255, 0.1);
@@ -187,7 +204,7 @@ body {
 }
 
 .product-card-hover:hover .hover-overlay {
-  opacity: 1;
+  opacity: 1 !important;
 }
 
 .product-card-hover .MuiCardMedia-root {

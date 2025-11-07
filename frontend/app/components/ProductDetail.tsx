@@ -12,7 +12,6 @@ import {
   CardContent,
   Button,
   IconButton,
-  Breadcrumbs,
   TextField,
   InputAdornment,
   Chip,
@@ -21,11 +20,11 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Remove as RemoveIcon,
   Add as AddIcon,
-  NavigateNext as NavigateNextIcon,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import NextLink from 'next/link';
 import { useCartStore } from '../store/cartStore';
+import Breadcrumbs from './Breadcrumbs';
 
 // Функція для витягування тексту з Rich Text Editor формату
 function extractTextFromRichText(richText: any): string {
@@ -156,9 +155,13 @@ async function fetchProduct(idOrSlug: string): Promise<GqlProduct | null> {
 }
 
 // Функція для отримання пов'язаних товарів
-async function fetchRelatedBouquets(currentSlug: string, currentVarieties: GqlVariety[]): Promise<GqlProduct[]> {
+async function fetchRelatedBouquets(
+  currentSlug: string, 
+  currentVarieties: GqlVariety[], 
+  currentColor?: string
+): Promise<GqlProduct[]> {
   try {
-    console.log('Fetching related products for:', currentSlug, 'with varieties:', currentVarieties);
+    console.log('Fetching related products for:', currentSlug, 'with varieties:', currentVarieties, 'color:', currentColor);
     const res = await fetch('/api/products', { cache: 'no-store' });
     const json = await res.json();
     
@@ -174,25 +177,57 @@ async function fetchRelatedBouquets(currentSlug: string, currentVarieties: GqlVa
     const otherProducts = allProducts.filter((p: GqlProduct) => p.slug !== currentSlug);
     console.log('Other products (excluding current):', otherProducts.length);
     
-    // Знаходимо товари з такими ж сортами квітів
-    const relatedByVariety = otherProducts.filter((product: GqlProduct) => 
-      product.varieties.some(variety => 
-        currentVarieties.some(currentVariety => currentVariety.name === variety.name)
-      )
-    );
-    console.log('Related by variety:', relatedByVariety.length);
+    const result: GqlProduct[] = [];
+    const usedIds = new Set<string>();
     
-    // Якщо знайшли товари з такими ж сортами, повертаємо їх (максимум 3)
-    if (relatedByVariety.length > 0) {
-      const result = relatedByVariety.slice(0, 3);
-      console.log('Returning related by variety:', result);
-      return result;
+    // 1. Спочатку шукаємо за сортами квітів
+    if (currentVarieties.length > 0) {
+      const relatedByVariety = otherProducts.filter((product: GqlProduct) => 
+        product.varieties.some(variety => 
+          currentVarieties.some(currentVariety => currentVariety.name === variety.name)
+        ) && !usedIds.has(product.documentId)
+      );
+      
+      // Додаємо до результату (максимум 3)
+      for (const product of relatedByVariety.slice(0, 3)) {
+        if (result.length < 3) {
+          result.push(product);
+          usedIds.add(product.documentId);
+        }
+      }
+      console.log('Related by variety:', result.length);
     }
     
-    // Якщо немає товарів з такими ж сортами, повертаємо випадкові (максимум 3)
-    const shuffled = otherProducts.sort(() => 0.5 - Math.random());
-    const result = shuffled.slice(0, 3);
-    console.log('Returning random products:', result);
+    // 2. Якщо не вистачає (менше 3), додаємо за кольором
+    if (result.length < 3 && currentColor) {
+      const relatedByColor = otherProducts.filter((product: GqlProduct) => 
+        product.color === currentColor && !usedIds.has(product.documentId)
+      );
+      
+      // Додаємо до результату, поки не буде 3
+      for (const product of relatedByColor) {
+        if (result.length < 3) {
+          result.push(product);
+          usedIds.add(product.documentId);
+        }
+      }
+      console.log('Related by color (total now):', result.length);
+    }
+    
+    // 3. Якщо все ще менше 3, додаємо випадкові
+    if (result.length < 3) {
+      const remaining = otherProducts.filter((p: GqlProduct) => !usedIds.has(p.documentId));
+      const shuffled = remaining.sort(() => 0.5 - Math.random());
+      
+      for (const product of shuffled) {
+        if (result.length < 3) {
+          result.push(product);
+          usedIds.add(product.documentId);
+        }
+      }
+      console.log('Added random products (final total):', result.length);
+    }
+    
     return result;
   } catch (error) {
     console.error('Error fetching related bouquets:', error);
@@ -216,8 +251,9 @@ export default function ProductDetail({ productId }: { productId: string }) {
         setData(bouquet);
         if (bouquet) {
           console.log('Product varieties:', bouquet.varieties);
+          console.log('Product color:', bouquet.color);
           // Завантажуємо пов'язані товари
-          fetchRelatedBouquets(bouquet.slug, bouquet.varieties || [])
+          fetchRelatedBouquets(bouquet.slug, bouquet.varieties || [], bouquet.color)
             .then((related) => {
               console.log('Related products loaded:', related);
               setRelatedProducts(related);
@@ -278,34 +314,34 @@ export default function ProductDetail({ productId }: { productId: string }) {
   }
 
   return (
-    <Box sx={{ py: { xs: 4, md: 6 }, backgroundColor: 'background.default' }}>
+    <Box sx={{ py: { xs: 5, md: 8 }, backgroundColor: 'background.default' }}>
       <Container maxWidth="xl">
         {/* Breadcrumbs */}
         <Breadcrumbs
-          separator={<NavigateNextIcon fontSize="small" />}
-          sx={{ mb: { xs: 2, sm: 3 } }}
-        >
-          <Link href="/" color="inherit">
-            Головна
-          </Link>
-          <Link href="/catalog" color="inherit">
-            Каталог
-          </Link>
-          <Typography color="text.primary">{data.name}</Typography>
-        </Breadcrumbs>
+          variant="minimal"
+          items={[
+            { label: 'Головна', href: '/' },
+            { label: 'Каталог', href: '/catalog' },
+            { label: data.name, isActive: true },
+          ]}
+        />
 
         {/* Main Product Section */}
-        <Grid container spacing={6} sx={{ mb: 8 }}>
+        <Grid container spacing={{ xs: 4, md: 8 }} sx={{ mb: { xs: 6, md: 10 } }}>
           {/* Product Images */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2.5, md: 3 } }}>
               {/* Main Image */}
               <Card
                 sx={{
                   borderRadius: 2,
                   overflow: 'hidden',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                  boxShadow: '0 8px 32px rgba(46, 125, 50, 0.12)',
                   position: 'relative',
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(46, 125, 50, 0.1)',
                 }}
               >
                 <CardMedia component="div" sx={{ height: { xs: 400, md: 500 }, position: 'relative', backgroundColor: 'grey.100' }}>
@@ -324,13 +360,17 @@ export default function ProductDetail({ productId }: { productId: string }) {
                               position: 'absolute',
                               top: 16,
                               right: 16,
-                              backgroundColor: 'rgba(0,0,0,0.7)',
+                              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.9) 0%, rgba(76, 175, 80, 0.85) 100%)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
                               color: 'white',
-                              px: 1.5,
-                              py: 0.5,
-                              borderRadius: 1,
+                              px: 2,
+                              py: 0.75,
+                              borderRadius: 2,
                               fontSize: '0.875rem',
-                              fontWeight: 500,
+                              fontWeight: 600,
+                              fontFamily: 'var(--font-inter)',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                             }}
                           >
                             {selectedImageIndex + 1} з {data.image.length}
@@ -349,14 +389,22 @@ export default function ProductDetail({ productId }: { productId: string }) {
                               left: 16,
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              backgroundColor: 'rgba(0,0,0,0.5)',
+                              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.85) 0%, rgba(76, 175, 80, 0.8) 100%)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
                               color: 'white',
+                              width: 44,
+                              height: 44,
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                backgroundColor: 'rgba(0,0,0,0.7)',
+                                background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.95) 0%, rgba(76, 175, 80, 0.9) 100%)',
+                                transform: 'translateY(-50%) scale(1.1)',
+                                boxShadow: '0 6px 16px rgba(0, 0, 0, 0.4)',
                               }
                             }}
                           >
-                            <NavigateNextIcon sx={{ transform: 'rotate(180deg)' }} />
+                            <NavigateNextIcon sx={{ transform: 'rotate(180deg)', fontSize: '1.5rem' }} />
                           </IconButton>
                           <IconButton
                             onClick={(e) => {
@@ -370,14 +418,22 @@ export default function ProductDetail({ productId }: { productId: string }) {
                               right: 16,
                               top: '50%',
                               transform: 'translateY(-50%)',
-                              backgroundColor: 'rgba(0,0,0,0.5)',
+                              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.85) 0%, rgba(76, 175, 80, 0.8) 100%)',
+                              backdropFilter: 'blur(8px)',
+                              WebkitBackdropFilter: 'blur(8px)',
                               color: 'white',
+                              width: 44,
+                              height: 44,
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                              transition: 'all 0.2s ease',
                               '&:hover': {
-                                backgroundColor: 'rgba(0,0,0,0.7)',
+                                background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.95) 0%, rgba(76, 175, 80, 0.9) 100%)',
+                                transform: 'translateY(-50%) scale(1.1)',
+                                boxShadow: '0 6px 16px rgba(0, 0, 0, 0.4)',
                               }
                             }}
                           >
-                            <NavigateNextIcon />
+                            <NavigateNextIcon sx={{ fontSize: '1.5rem' }} />
                           </IconButton>
                         </>
                       )}
@@ -398,20 +454,27 @@ export default function ProductDetail({ productId }: { productId: string }) {
 
               {/* Thumbnail Images */}
               {data.image && data.image.length > 1 && (
-                <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1 }}>
+                <Box sx={{ display: 'flex', gap: 1.5, overflowX: 'auto', pb: 1, pt: 1 }}>
                   {data.image.slice(0, 4).map((img, index) => (
                     <Card
                       key={img.documentId}
                       sx={{
-                        minWidth: 80,
-                        height: 80,
-                        borderRadius: 1,
+                        minWidth: 90,
+                        height: 90,
+                        borderRadius: 2,
                         overflow: 'hidden',
                         cursor: 'pointer',
-                        border: selectedImageIndex === index ? '2px solid' : '1px solid',
-                        borderColor: selectedImageIndex === index ? 'primary.main' : 'grey.300',
+                        border: selectedImageIndex === index ? '2.5px solid' : '1.5px solid',
+                        borderColor: selectedImageIndex === index ? 'primary.main' : 'rgba(46, 125, 50, 0.2)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        transition: 'all 0.2s ease',
+                        boxShadow: selectedImageIndex === index
+                          ? '0 4px 12px rgba(46, 125, 50, 0.25)'
+                          : '0 2px 6px rgba(0, 0, 0, 0.08)',
                         '&:hover': {
                           borderColor: 'primary.main',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(46, 125, 50, 0.25)',
                         }
                       }}
                       onClick={() => {
@@ -430,7 +493,8 @@ export default function ProductDetail({ productId }: { productId: string }) {
                             objectFit: 'contain', 
                             objectPosition: 'center',
                             width: '100%', 
-                            height: '100%' 
+                            height: '100%',
+                            borderRadius: '8px',
                           }} 
                         />
                       </CardMedia>
@@ -439,25 +503,37 @@ export default function ProductDetail({ productId }: { productId: string }) {
                   {data.image.length > 4 && (
                     <Card
                       sx={{
-                        minWidth: 80,
-                        height: 80,
-                        borderRadius: 1,
+                        minWidth: 90,
+                        height: 90,
+                        borderRadius: 2,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: 'grey.100',
-                        border: '1px solid',
-                        borderColor: 'grey.300',
+                        background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(76, 175, 80, 0.08) 100%)',
+                        border: '1.5px solid',
+                        borderColor: 'rgba(46, 125, 50, 0.2)',
                         cursor: 'pointer',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          backgroundColor: 'grey.200',
+                          backgroundColor: 'rgba(46, 125, 50, 0.15)',
+                          borderColor: 'primary.main',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(46, 125, 50, 0.2)',
                         }
                       }}
                       onClick={() => {
                         setSelectedImageIndex(4);
                       }}
                     >
-                      <Typography variant="body2" color="textSecondary">
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: 'primary.main',
+                          fontFamily: 'var(--font-inter)',
+                          fontWeight: 600,
+                          fontSize: '0.9rem',
+                        }}
+                      >
                         +{data.image.length - 4}
                       </Typography>
                     </Card>
@@ -469,69 +545,184 @@ export default function ProductDetail({ productId }: { productId: string }) {
 
           {/* Product Details */}
           <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ pl: { md: 4 } }}>
+            <Box sx={{ pl: { md: 6 } }}>
               {/* Product Name */}
               <Typography
                 variant="h1"
                 component="h1"
                 sx={{
-                  fontSize: { xs: '2rem', md: '2.5rem', lg: '3rem' },
+                  fontSize: { xs: '1.75rem', md: '2.25rem', lg: '2.75rem' },
                   fontWeight: 700,
                   color: 'text.primary',
-                  mb: 2,
+                  mb: { xs: 2, md: 3 },
                   fontFamily: 'var(--font-playfair)',
+                  lineHeight: 1.2,
+                  letterSpacing: '0.01em',
                 }}
               >
                 {data.name}
               </Typography>
 
               {/* Price */}
-              <Typography
-                variant="h4"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 700,
-                  mb: 2,
-                  fontFamily: 'var(--font-inter)',
-                }}
-              >
-                {data.price} ₴
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 3, md: 4 }, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
+                  <Typography
+                    variant="h4"
+                    component="span"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '1.75rem', md: '2rem', lg: '2.25rem' },
+                      lineHeight: 1.2,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {data.price}
+                  </Typography>
+                  <Typography
+                    component="span"
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 500,
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '1.25rem', md: '1.5rem', lg: '1.75rem' },
+                      opacity: 0.85,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    ₴
+                  </Typography>
+                </Box>
+                <Typography
+                  component="span"
+                  sx={{
+                    color: 'primary.main',
+                    fontFamily: 'var(--font-inter)',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.9rem', md: '1rem' },
+                    letterSpacing: '0.01em',
+                    textTransform: 'lowercase',
+                    opacity: 0.8,
+                    lineHeight: 1,
+                  }}
+                >
+                  {data.productType === 'bouquet' ? 'за букет' : 'за шт.'}
+                </Typography>
+              </Box>
 
               {/* Short description under title/price */}
               {data.description && (
-                <Typography
-                  variant="body1"
-                  sx={{ color: 'text.secondary', mb: 3, whiteSpace: 'pre-line', fontFamily: 'var(--font-inter)' }}
+                <Box
+                  sx={{
+                    mb: { xs: 4, md: 5 },
+                    p: { xs: 2.5, md: 3 },
+                    background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
+                    borderRadius: 2,
+                    border: '1px solid rgba(46, 125, 50, 0.1)',
+                  }}
                 >
-                  {extractTextFromRichText(data.description)}
-                </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: 'text.secondary',
+                      whiteSpace: 'pre-line',
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '0.95rem', md: '1.05rem' },
+                      lineHeight: 1.7,
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    {extractTextFromRichText(data.description)}
+                  </Typography>
+                </Box>
               )}
 
               {/* Info grid: Колір (ліворуч), Сорти (праворуч) */}
-              <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid size={{ xs: 6, md: 6 }}>
+              <Grid container spacing={{ xs: 3, md: 4 }} sx={{ mb: { xs: 4, md: 5 } }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   {data.color && (
                     <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontWeight: 600,
+                          mb: { xs: 1.5, md: 2 },
+                          color: 'text.primary',
+                          fontFamily: 'var(--font-inter)',
+                          fontSize: { xs: '0.95rem', md: '1rem' },
+                          letterSpacing: '0.01em',
+                        }}
+                      >
                         Колір
                       </Typography>
                       <Link href={`/catalog?color=${encodeURIComponent(translateColor(data.color))}`} style={{ textDecoration: 'none' }}>
-                        <Box sx={{ display: 'inline-block', px: 2, py: 1, backgroundColor: getColorBg(data.color), borderRadius: 2, fontSize: '0.875rem', fontWeight: 600, fontFamily: 'var(--font-inter)', border: '1px solid', borderColor: 'grey.300', cursor: 'pointer' }}>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            px: 2.5,
+                            py: 1.25,
+                            backgroundColor: getColorBg(data.color),
+                            borderRadius: 2,
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            fontFamily: 'var(--font-inter)',
+                            border: '1px solid',
+                            borderColor: 'rgba(46, 125, 50, 0.2)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              boxShadow: '0 4px 12px rgba(46, 125, 50, 0.15)',
+                              borderColor: 'rgba(46, 125, 50, 0.3)',
+                            },
+                          }}
+                        >
                           {translateColor(data.color)}
                         </Box>
                       </Link>
                     </Box>
                   )}
                 </Grid>
-                <Grid size={{ xs: 6, md: 6 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      mb: { xs: 1.5, md: 2 },
+                      color: 'text.primary',
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '0.95rem', md: '1rem' },
+                      letterSpacing: '0.01em',
+                    }}
+                  >
                     Сорти в букеті
                   </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
                     {data.varieties?.map((variety) => (
                       <Link key={variety.documentId} href={`/catalog?variety=${encodeURIComponent(variety.name)}`} style={{ textDecoration: 'none' }}>
-                        <Box sx={{ px: 2, py: 1, backgroundColor: 'primary.main', color: 'white', borderRadius: 3, fontSize: '0.875rem', fontWeight: 500, fontFamily: 'var(--font-inter)' }}>
+                        <Box
+                          sx={{
+                            px: 2.5,
+                            py: 1.25,
+                            borderRadius: 0,
+                            border: '2px solid',
+                            borderColor: 'primary.main',
+                            color: 'primary.main',
+                            backgroundColor: 'background.default',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            fontFamily: 'var(--font-inter)',
+                            textTransform: 'none',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              borderWidth: 2,
+                              backgroundColor: 'primary.main',
+                              color: 'background.default',
+                            },
+                          }}
+                        >
                           {variety.name}
                         </Box>
                       </Link>
@@ -540,73 +731,227 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 </Grid>
               </Grid>
 
-              {/* Delivery below grid */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, mb: 1.5, color: 'text.primary', fontFamily: 'var(--font-inter)' }}>
-                  Доставка
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6, fontFamily: 'var(--font-inter)' }}>
-                  Доставка та умови узгоджуються під час оформлення замовлення.
-                </Typography>
-              </Box>
-
-              {/* Availability */}
-              <Box sx={{ mb: 2 }}>
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, color: 'text.primary', fontFamily: 'var(--font-inter)' }}
-                >
-                  В наявності: {typeof data.availableQuantity === 'number' ? data.availableQuantity : '—'}
-                </Typography>
-              </Box>
-
-              {/* Bottom row: Quantity left, Add to cart right (or left if no quantity) */}
-              <Grid container spacing={2} alignItems="center" sx={{ mt: 2 }}>
-                <Grid size={{ xs: 6, md: 6 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton onClick={() => handleQuantityChange(quantity - 1)} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, width: 40, height: 40 }}>
-                      <RemoveIcon />
-                    </IconButton>
-                    <TextField value={quantity} onChange={(e) => { const value = parseInt(e.target.value) || 1; handleQuantityChange(value); }} inputProps={{ style: { textAlign: 'center', width: '60px' }, }} sx={{ '& .MuiOutlinedInput-root': { width: 80, height: 40 } }} />
-                    <IconButton onClick={() => handleQuantityChange(quantity + 1)} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, width: 40, height: 40 }}>
-                      <AddIcon />
-                    </IconButton>
-                  </Box>
-                </Grid>
-                <Grid size={{ xs: 6, md: 6 }} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-start' } }}>
-                  <Button
-                    variant="outlined"
-                    size="large"
-                    startIcon={<ShoppingCartIcon />}
-                    onClick={() => {
-                  if (data) {
-                    const imageUrl = data.image?.[0]?.url ? `${API_URL}${data.image[0].url}` : undefined;
-                    console.log('API_URL:', API_URL);
-                    console.log('Image URL from data:', data.image?.[0]?.url);
-                    console.log('Final image URL:', imageUrl);
-                    
-                    addItem({
-                      id: data.documentId,
-                      name: data.name,
-                      price: data.price,
-                      imageUrl: imageUrl,
-                      slug: data.slug,
-                    });
-                    openCart();
-                  }
+              {/* Delivery and Availability */}
+              <Box
+                sx={{
+                  mb: { xs: 4, md: 5 },
+                  p: { xs: 2.5, md: 3 },
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.4) 100%)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(46, 125, 50, 0.1)',
                 }}
-                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem', borderRadius: 0, borderColor: 'primary.main', color: 'primary.main', backgroundColor: 'background.default', borderWidth: 2, textTransform: 'none', fontFamily: 'var(--font-inter)', '&:hover': { borderWidth: 2, backgroundColor: 'primary.main', color: 'background.default' } }}
+              >
+                <Box sx={{ mb: 2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 1,
+                      color: 'text.primary',
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '0.95rem', md: '1rem' },
+                      letterSpacing: '0.01em',
+                    }}
                   >
-                    У кошик
-                  </Button>
+                    Доставка
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: 'text.secondary',
+                      lineHeight: 1.7,
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '0.9rem', md: '0.95rem' },
+                    }}
+                  >
+                    Доставка та умови узгоджуються під час оформлення замовлення.
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    pt: 2,
+                    borderTop: '1px solid rgba(46, 125, 50, 0.1)',
+                  }}
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      fontFamily: 'var(--font-inter)',
+                      fontSize: { xs: '0.9rem', md: '0.95rem' },
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: typeof data.availableQuantity === 'number' && data.availableQuantity > 0
+                          ? 'success.main'
+                          : 'grey.400',
+                        display: 'inline-block',
+                      }}
+                    />
+                    В наявності: {typeof data.availableQuantity === 'number' ? data.availableQuantity : '—'}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Bottom row: Quantity left, Add to cart right */}
+              <Box
+                sx={{
+                  mt: { xs: 4, md: 5 },
+                  p: { xs: 3, md: 3.5 },
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  border: '1px solid rgba(46, 125, 50, 0.15)',
+                  boxShadow: '0 4px 16px rgba(46, 125, 50, 0.1)',
+                }}
+              >
+                <Grid container spacing={2} alignItems="center">
+                  {data.productType === 'singleflower' && (
+                    <Grid size={{ xs: 12, sm: 5 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 1,
+                          color: 'text.secondary',
+                          fontFamily: 'var(--font-inter)',
+                          fontWeight: 500,
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        Кількість
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <IconButton
+                          onClick={() => handleQuantityChange(quantity - 1)}
+                          disabled={quantity <= 1}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'rgba(46, 125, 50, 0.2)',
+                            borderRadius: 1.5,
+                            width: 44,
+                            height: 44,
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            borderColor: 'primary.main',
+                          },
+                            '&:disabled': {
+                              opacity: 0.4,
+                            },
+                          }}
+                        >
+                          <RemoveIcon sx={{ fontSize: '1.2rem' }} />
+                        </IconButton>
+                        <TextField
+                          value={quantity}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 1;
+                            handleQuantityChange(value);
+                          }}
+                          inputProps={{
+                            style: { textAlign: 'center', width: '60px', fontSize: '1rem', fontWeight: 600 },
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              width: 90,
+                              height: 44,
+                              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              borderRadius: 1.5,
+                              border: '1px solid rgba(46, 125, 50, 0.2)',
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                              },
+                              '&.Mui-focused': {
+                                borderColor: 'primary.main',
+                                boxShadow: '0 0 0 3px rgba(46, 125, 50, 0.1)',
+                              },
+                            },
+                          }}
+                        />
+                        <IconButton
+                          onClick={() => handleQuantityChange(quantity + 1)}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'rgba(46, 125, 50, 0.2)',
+                            borderRadius: 1.5,
+                            width: 44,
+                            height: 44,
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            transition: 'all 0.2s ease',
+                          '&:hover': {
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            borderColor: 'primary.main',
+                          },
+                          }}
+                        >
+                          <AddIcon sx={{ fontSize: '1.2rem' }} />
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  )}
+                  <Grid size={{ xs: 12, sm: data.productType === 'singleflower' ? 7 : 12 }}>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      fullWidth
+                      startIcon={<ShoppingCartIcon />}
+                      onClick={() => {
+                        if (data) {
+                          const imageUrl = data.image?.[0]?.url ? `${API_URL}${data.image[0].url}` : undefined;
+                          addItem({
+                            id: data.documentId,
+                            name: data.name,
+                            price: data.price,
+                            imageUrl: imageUrl,
+                            slug: data.slug,
+                          });
+                          openCart();
+                        }
+                      }}
+                      sx={{
+                        px: 4,
+                        py: 1.5,
+                        fontSize: { xs: '1rem', md: '1.1rem' },
+                        borderRadius: 0,
+                        borderColor: 'primary.main',
+                        color: 'primary.main',
+                        backgroundColor: 'background.default',
+                        borderWidth: 2,
+                        textTransform: 'none',
+                        fontFamily: 'var(--font-inter)',
+                        fontWeight: 500,
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          borderWidth: 2,
+                          backgroundColor: 'primary.main',
+                          color: 'background.default',
+                        },
+                      }}
+                    >
+                      Додати до кошика
+                    </Button>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
             </Box>
           </Grid>
         </Grid>
 
         {/* Дивіться також Section */}
-        {relatedProducts.length > 0 ? (
+        {relatedProducts.length > 0 && (
           <Box sx={{ mb: 6 }}>
             <Typography
               variant="h2"
@@ -709,28 +1054,6 @@ export default function ProductDetail({ productId }: { productId: string }) {
                 </Grid>
               ))}
             </Grid>
-          </Box>
-        ) : (
-          <Box sx={{ mb: 6, textAlign: 'center', py: 4 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'text.secondary',
-                fontFamily: 'var(--font-inter)',
-              }}
-            >
-              Немає пов'язаних товарів
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontFamily: 'var(--font-inter)',
-                mt: 1,
-              }}
-            >
-              Debug: relatedProducts.length = {relatedProducts.length}
-            </Typography>
           </Box>
         )}
 

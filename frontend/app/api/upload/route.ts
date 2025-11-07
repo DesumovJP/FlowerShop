@@ -64,6 +64,23 @@ export async function POST(request: NextRequest) {
       if (!entryId) {
         throw new Error(`Bouquet with documentId ${documentId} not found`);
       }
+    } else if (ref === 'api::product.product') {
+      const res = await fetch(`${STRAPI_URL}/api/products?filters[documentId][$eq]=${documentId}`, {
+        headers: {
+          'Authorization': `Bearer ${STRAPI_TOKEN}`,
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch product: ${res.status}`);
+      }
+      
+      const json = await res.json();
+      entryId = json.data?.[0]?.id;
+      
+      if (!entryId) {
+        throw new Error(`Product with documentId ${documentId} not found`);
+      }
     } else {
       throw new Error(`Unknown ref type: ${ref}`);
     }

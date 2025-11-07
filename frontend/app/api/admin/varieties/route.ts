@@ -1,27 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
+const STRAPI_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // GET - отримати всі сорти
 export async function GET() {
   try {
-    const response = await fetch(`${STRAPI_URL}/api/varieties?populate=*`, {
-      headers: {
-        'Authorization': `Bearer ${STRAPI_TOKEN}`,
-      },
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Додаємо токен тільки якщо він є
+    if (STRAPI_TOKEN) {
+      headers['Authorization'] = `Bearer ${STRAPI_TOKEN}`;
+    }
+
+    const url = new URL(`${STRAPI_URL}/api/varieties`);
+    url.searchParams.set('populate', '*');
+    url.searchParams.set('pagination[pageSize]', '100');
+    url.searchParams.set('sort[0]', 'name:asc');
+
+    const response = await fetch(url.toString(), {
+      headers,
+      cache: 'no-store',
     });
 
     if (!response.ok) {
-      throw new Error(`Strapi error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Strapi API error:', response.status, errorText);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch varieties',
+          details: errorText,
+          status: response.status 
+        },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
+    
+    // Перетворюємо дані в очікуваний формат
+    const varieties = data.data?.map((item: any) => ({
+      documentId: item.documentId,
+      name: item.name,
+      slug: item.slug,
+      description: item.description,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      publishedAt: item.publishedAt,
+    })) || [];
+
+    return NextResponse.json({ data: varieties });
+  } catch (error: any) {
     console.error('Error fetching varieties:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch varieties' },
+      { 
+        error: 'Failed to fetch varieties',
+        message: error?.message || 'Unknown error'
+      },
       { status: 500 }
     );
   }

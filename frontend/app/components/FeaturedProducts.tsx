@@ -67,11 +67,13 @@ export default function FeaturedProducts() {
             variant="h2"
             component="h2"
             sx={{
-              fontSize: { xs: '2rem', md: '2.5rem', lg: '3rem' },
+              fontSize: { xs: '1.875rem', md: '2.375rem', lg: '2.75rem' },
               fontWeight: 700,
               color: 'text.primary',
-              mb: 3,
+              mb: { xs: 2.5, md: 3.5 },
               fontFamily: 'var(--font-playfair)',
+              lineHeight: { xs: 1.25, md: 1.2 },
+              letterSpacing: { xs: '-0.01em', md: '-0.015em' },
             }}
           >
             Розкриваємо нашу колекцію популярних букетів
@@ -82,11 +84,12 @@ export default function FeaturedProducts() {
               color: 'text.secondary',
               maxWidth: '700px',
               mx: 'auto',
-              lineHeight: 1.6,
-              fontSize: { xs: '1.1rem', md: '1.25rem' },
+              lineHeight: { xs: 1.7, md: 1.75 },
+              fontSize: { xs: '1rem', md: '1.15rem', lg: '1.2rem' },
               fontFamily: 'var(--font-inter)',
               fontWeight: 400,
-              mb: 4,
+              mb: { xs: 4, md: 5 },
+              letterSpacing: '0.01em',
             }}
           >
             Відкрийте для себе вражаючу колекцію популярних квітів, 

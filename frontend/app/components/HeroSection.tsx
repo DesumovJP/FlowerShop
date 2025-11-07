@@ -30,11 +30,12 @@ export default function HeroSection() {
               variant="h1"
               component="h1"
               sx={{
-                fontSize: { xs: '2.5rem', md: '3.5rem', lg: '4rem' },
+                fontSize: { xs: '2.25rem', md: '3.25rem', lg: '3.75rem' },
                 fontWeight: 700,
                 color: 'text.primary',
-                mb: 3,
-                lineHeight: 1.1,
+                mb: { xs: 2.5, md: 3.5 },
+                lineHeight: { xs: 1.2, md: 1.15 },
+                letterSpacing: { xs: '-0.01em', md: '-0.02em' },
                 fontFamily: 'var(--font-playfair)',
               }}
             >
@@ -44,11 +45,12 @@ export default function HeroSection() {
               variant="h6"
               sx={{
                 color: 'text.secondary',
-                mb: 4,
-                lineHeight: 1.6,
-                fontSize: { xs: '1.1rem', md: '1.25rem' },
+                mb: { xs: 3.5, md: 4.5 },
+                lineHeight: { xs: 1.7, md: 1.75 },
+                fontSize: { xs: '1rem', md: '1.15rem', lg: '1.2rem' },
                 fontFamily: 'var(--font-inter)',
                 fontWeight: 400,
+                letterSpacing: '0.01em',
               }}
             >
               Заглибтесь у світ красивих квітів та відкрийте для себе 

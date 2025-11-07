@@ -358,17 +358,29 @@ function MyShiftContent() {
       const month = String(base.getMonth() + 1).padStart(2, '0');
       const year = String(base.getFullYear());
       const res = await fetch(`/api/shift-reports?month=${month}&year=${year}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to fetch monthly stats:', res.status, errorData);
+        setMonthStats({ cashTotal: 0, writeoffTotal: 0, ordersCount: 0 });
+        return;
+      }
+      
       const json = await res.json();
+      // Strapi v5 може повертати дані в різних форматах
       const list = json?.data || [];
       let cashTotal = 0;
       let writeoffTotal = 0;
       let ordersCount = 0;
+      
       for (const item of list) {
-        const attr = item.attributes || {};
+        // Обробляємо обидва формати: з attributes (v4) та без (v5)
+        const attr = item.attributes || item;
         cashTotal += Number(attr.cash || 0);
+        
         const snap = attr.itemsSnapshot || {};
         ordersCount += Number(snap?.ordersCount || 0);
+        
         const items = Array.isArray(snap?.items) ? snap.items : [];
         for (const it of items) {
           const w = Number(it?.writtenOff || 0);
@@ -376,6 +388,7 @@ function MyShiftContent() {
           writeoffTotal += w * price;
         }
       }
+      
       setMonthStats({ cashTotal, writeoffTotal, ordersCount });
     } catch (e) {
       console.error('Failed to fetch monthly stats:', e);

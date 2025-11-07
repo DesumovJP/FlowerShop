@@ -129,8 +129,8 @@ function ProductFormDialog({
     name: '',
     slug: '',
     price: 0,
-    availableQuantity: 0,
-    availableQuantityInput: '0',
+    availableQuantity: undefined,
+    availableQuantityInput: '',
     description: '',
     color: '',
     cardType: 'standard',
@@ -155,7 +155,7 @@ function ProductFormDialog({
       color: validColors.includes(data.color) ? data.color : '',
       availableQuantity: typeof data.availableQuantity === 'number' && data.availableQuantity >= 0
         ? Math.floor(data.availableQuantity)
-        : 0,
+        : undefined,
     };
   };
 
@@ -173,14 +173,14 @@ function ProductFormDialog({
     };
 
     const cardTypeMapping: Record<string, string> = {
-      'standard': 'standard',
+      'standard': 'standart', // Strapi очікує "standart" (з помилкою в написанні)
       'large': 'large'
     };
 
     return {
       ...data,
       color: data.color ? colorMapping[data.color] || data.color : '',
-      cardType: data.cardType ? (cardTypeMapping[data.cardType] as 'standard' | 'large') || data.cardType : 'standard',
+      cardType: data.cardType ? (cardTypeMapping[data.cardType] as any) || 'standart' : 'standart',
     };
   };
 
@@ -225,8 +225,8 @@ function ProductFormDialog({
           name: product.name,
           slug: product.slug || '',
           price: product.price,
-          availableQuantity: product.availableQuantity ?? 0,
-          availableQuantityInput: (product.availableQuantity ?? 0).toString(),
+          availableQuantity: product.availableQuantity ?? undefined,
+          availableQuantityInput: product.availableQuantity != null ? product.availableQuantity.toString() : '',
           description: extractTextFromRichText(product.description) || '',
           color: product.color || '',
           cardType: product.cardType,
@@ -253,8 +253,8 @@ function ProductFormDialog({
           name: '',
           slug: '',
           price: 0,
-          availableQuantity: 0,
-          availableQuantityInput: '0',
+          availableQuantity: undefined,
+          availableQuantityInput: '',
           description: '',
           color: '',
           cardType: 'standard',
@@ -288,9 +288,13 @@ function ProductFormDialog({
       const numericValue = value === '' ? 0 : parseFloat(value) || 0;
       setFormData(prev => ({ ...prev, [field]: numericValue }));
     } else if (field === 'availableQuantity') {
-      const numericValue = value === '' ? 0 : parseInt(value, 10);
-      const safeValue = Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : 0;
-      setFormData(prev => ({ ...prev, availableQuantity: safeValue }));
+      if (value === '') {
+        setFormData(prev => ({ ...prev, availableQuantity: undefined }));
+      } else {
+        const numericValue = parseInt(value, 10);
+        const safeValue = Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : undefined;
+        setFormData(prev => ({ ...prev, availableQuantity: safeValue }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -367,7 +371,7 @@ function ProductFormDialog({
       newErrors.price = 'Ціна повинна бути більше 0' as any;
     }
     
-    if (formData.availableQuantity == null || formData.availableQuantity < 0 || isNaN(formData.availableQuantity as any)) {
+    if (formData.availableQuantity != null && (formData.availableQuantity < 0 || isNaN(formData.availableQuantity as any))) {
       (newErrors as any).availableQuantity = 'Кількість не може бути відʼємною';
     }
     
@@ -425,7 +429,7 @@ function ProductFormDialog({
           name: transliteratedData.name,
           slug: transliteratedData.slug,
           price: transliteratedData.price,
-          availableQuantity: formData.availableQuantity ?? 0,
+          availableQuantity: formData.availableQuantity ?? undefined,
           description: transliteratedData.description,
           color: transliteratedData.color,
           cardType: transliteratedData.cardType,
@@ -447,13 +451,27 @@ function ProductFormDialog({
         if (!response.ok) {
           let errorMessage = 'Failed to save product';
           try {
-            const errorData = await response.json();
-            console.error('Error saving product:', errorData);
-            errorMessage = errorData.error || errorMessage;
+            const responseText = await response.text();
+            console.error('Error response text:', responseText);
+            
+            if (responseText) {
+              try {
+                const errorData = JSON.parse(responseText);
+                console.error('Error saving product:', errorData);
+                errorMessage = errorData.error || errorMessage;
+              } catch (parseError) {
+                // Якщо не JSON, використовуємо текст відповіді
+                errorMessage = responseText || errorMessage;
+              }
+            } else {
+              // Якщо відповідь порожня, використовуємо статус
+              errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
+            }
           } catch (jsonError) {
             console.error('Failed to parse error response:', jsonError);
             console.error('Response status:', response.status);
             console.error('Response statusText:', response.statusText);
+            errorMessage = `HTTP ${response.status}: ${response.statusText || 'Unknown error'}`;
           }
           throw new Error(errorMessage);
         }
@@ -461,16 +479,21 @@ function ProductFormDialog({
         const result = await response.json();
         console.log('📊 API Response:', result);
         
-        // Отримуємо documentId залежно від типу продукту
-        const bouquetDocumentId = productType === 'singleflower' 
-          ? result.data?.documentId 
-          : result.data?.documentId;
+        // Отримуємо documentId залежно від структури відповіді
+        // PUT повертає об'єкт напряму: { documentId: ..., name: ..., ... }
+        // POST може повертати: { data: { documentId: ..., ... } } або напряму об'єкт
+        const bouquetDocumentId = result.documentId || result.data?.documentId || result.data?.id;
         
         console.log('📋 Document ID:', bouquetDocumentId);
+        console.log('📋 Full result structure:', JSON.stringify(result, null, 2));
         
         if (!bouquetDocumentId) {
-          throw new Error('Failed to get document ID from API response');
+          console.error('❌ Failed to extract documentId from response:', result);
+          throw new Error(`Failed to get document ID from API response. Response structure: ${JSON.stringify(result)}`);
         }
+        
+        // Затримка для того, щоб Strapi встиг обробити створення товару
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Handle image uploads separately if any
         if (selectedFiles.length > 0) {
@@ -499,7 +522,14 @@ function ProductFormDialog({
               } else {
                 const uploadResult = await uploadResponse.json();
                 console.log('Successfully uploaded image:', file.name, uploadResult);
-                uploadedFiles.push(...uploadResult);
+                // uploadResult може бути масивом або об'єктом
+                if (Array.isArray(uploadResult)) {
+                  uploadedFiles.push(...uploadResult);
+                } else if (uploadResult.id || uploadResult.documentId) {
+                  uploadedFiles.push(uploadResult);
+                } else {
+                  console.warn('Unexpected upload result format:', uploadResult);
+                }
               }
             } catch (uploadError) {
               console.error('Upload error for file:', file.name, uploadError);
@@ -509,43 +539,51 @@ function ProductFormDialog({
           // Прив'язуємо завантажені файли до товару
           if (uploadedFiles.length > 0) {
             console.log('🔗 Linking uploaded files to product:', uploadedFiles.length);
+            console.log('Uploaded files data:', uploadedFiles);
             
             try {
-              // Отримуємо поточний стан контенту
-              const contentResponse = await fetch(`${apiBaseUrl}/api/products/${bouquetDocumentId}?populate=image`);
-              const contentData = await contentResponse.json();
+              // Додаткова затримка перед прив'язкою зображень
+              await new Promise(resolve => setTimeout(resolve, 1000));
               
-              // Отримуємо існуючі файли
-              const currentFiles = contentData.data.image || [];
-              const currentFileIds = currentFiles.map((f: any) => f.id);
+              // Отримуємо ID завантажених файлів
+              // uploadedFiles містить об'єкти з id або documentId
+              const newFileIds = uploadedFiles
+                .map(file => file.id || file.documentId)
+                .filter(Boolean);
               
-              // Додаємо нові файли до існуючих
-              const newFileIds = uploadedFiles.map(file => file.id);
-              const updatedFileIds = [...currentFileIds, ...newFileIds];
+              console.log('New file IDs to link:', newFileIds);
               
-              console.log('Current files:', currentFileIds);
-              console.log('New files:', newFileIds);
-              console.log('Updated files:', updatedFileIds);
-              
-              // Оновлюємо контент з прив'язкою файлів
-              const updateResponse = await fetch(`${apiBaseUrl}/api/products/${bouquetDocumentId}`, {
+              // Використовуємо GraphQL мутацію для оновлення зображень
+              // Оновлюємо контент з прив'язкою файлів через наш API route (який використовує GraphQL)
+              const updateResponse = await fetch(`/api/products/${bouquetDocumentId}`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  data: { image: updatedFileIds }
+                  image: newFileIds // Відправляємо тільки нові файли, Strapi додасть їх до існуючих
                 })
               });
               
               if (!updateResponse.ok) {
-                const errorData = await updateResponse.json();
-                console.error('Failed to link images:', errorData);
+                const responseText = await updateResponse.text();
+                console.error('Failed to link images. Status:', updateResponse.status);
+                console.error('Response text:', responseText);
+                
+                try {
+                  const errorData = JSON.parse(responseText);
+                  console.error('Failed to link images:', errorData);
+                } catch (e) {
+                  console.error('Failed to parse error response:', responseText);
+                }
               } else {
-                console.log('✅ Images successfully linked to product');
+                const result = await updateResponse.json();
+                console.log('✅ Images successfully linked to product:', result);
               }
             } catch (linkError) {
               console.error('Error linking images:', linkError);
+              // Не кидаємо помилку, щоб не блокувати збереження товару
+              console.warn('Images were uploaded but could not be linked. They may need to be linked manually.');
             }
           }
         }
@@ -571,7 +609,7 @@ function ProductFormDialog({
               name: formData.name,
               slug: formData.slug,
               price: formData.price,
-              availableQuantity: formData.availableQuantity ?? 0,
+              availableQuantity: formData.availableQuantity ?? undefined,
               productType: formData.productType,
               color: formData.color,
               varieties: formData.varieties,
@@ -731,6 +769,7 @@ function ProductFormDialog({
                   error={!!errors.slug}
                   helperText={errors.slug}
                   required
+                  disabled={!!product}
                   placeholder="vesnyanyj-buket"
                   sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                 />
@@ -755,12 +794,12 @@ function ProductFormDialog({
                   label="Кількість на складі"
                   type="text"
                   inputMode="numeric"
-                  value={formData.availableQuantityInput ?? '0'}
+                  value={formData.availableQuantityInput ?? ''}
                   onChange={(e) => {
                     const val = e.target.value.trim();
                     setFormData(prev => ({ ...prev, availableQuantityInput: val }));
                     if (val === '') {
-                      setFormData(prev => ({ ...prev, availableQuantity: 0 }));
+                      setFormData(prev => ({ ...prev, availableQuantity: undefined }));
                     } else {
                       const num = Number(val);
                       if (!isNaN(num) && num >= 0) {
@@ -771,7 +810,7 @@ function ProductFormDialog({
                   onBlur={(e) => {
                     const val = e.target.value.trim();
                     if (val === '' || isNaN(Number(val)) || Number(val) < 0) {
-                      setFormData(prev => ({ ...prev, availableQuantity: 0, availableQuantityInput: '0' }));
+                      setFormData(prev => ({ ...prev, availableQuantity: undefined, availableQuantityInput: '' }));
                     } else {
                       const num = Number(val);
                       setFormData(prev => ({ ...prev, availableQuantity: num, availableQuantityInput: num.toString() }));
@@ -779,7 +818,7 @@ function ProductFormDialog({
                   }}
                   error={!!(errors as any).availableQuantity}
                   helperText={(errors as any).availableQuantity as any}
-                  placeholder="0"
+                  placeholder=""
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
                 />
               </Box>
@@ -848,14 +887,22 @@ function ProductFormDialog({
               
               {/* Колекції видалені з нової структури Product */}
               
-              {/* Тип продукту не редагується: показуємо readOnly поле */}
-              <TextField
-                fullWidth
-                label="Тип продукту"
-                value={formData.productType === 'bouquet' ? 'Букет' : 'Квітка'}
-                InputProps={{ readOnly: true }}
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
-              />
+              {/* Тип продукту */}
+              <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}>
+                <InputLabel>Тип продукту</InputLabel>
+                <Select
+                  value={formData.productType}
+                  label="Тип продукту"
+                  onChange={handleChange('productType')}
+                  disabled={!!product}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+                >
+                  <MenuItem value="bouquet">Букет</MenuItem>
+                  <MenuItem value="singleflower">Квітка</MenuItem>
+                  <MenuItem value="composition">Композиція</MenuItem>
+                  <MenuItem value="accessory">Аксесуар</MenuItem>
+                </Select>
+              </FormControl>
               
               <FormControl fullWidth sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}>
                 <InputLabel>Розмір картки</InputLabel>
@@ -1193,10 +1240,6 @@ function ProductFormDialog({
                     </Box>
           </Box>
         </Box>
-        {/* Сірий оверлей: В розробці */}
-        <Box sx={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'text.secondary' }}>
-          В розробці
-        </Box>
       </DialogContent>
       
       <DialogActions sx={{ 
@@ -1210,7 +1253,7 @@ function ProductFormDialog({
       }}>
         <Button 
           onClick={onClose} 
-          disabled
+          disabled={isSubmitting}
           sx={{
             color: '#666',
             fontWeight: 600,
@@ -1236,7 +1279,8 @@ function ProductFormDialog({
           Скасувати
         </Button>
         <Button 
-          disabled
+          onClick={handleSubmit}
+          disabled={isSubmitting}
           sx={{
             background: product 
               ? 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)' 
@@ -1754,6 +1798,21 @@ export default function ProductsPage() {
     fetchVarieties();
   }, [fetchProducts]);
 
+  // Слухаємо події оновлення товарів
+  useEffect(() => {
+    const handleProductsRefresh = () => {
+      console.log('🔄 Received products:refresh event, refreshing...');
+      fetchProducts(true);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('products:refresh', handleProductsRefresh);
+      return () => {
+        window.removeEventListener('products:refresh', handleProductsRefresh);
+      };
+    }
+  }, [fetchProducts]);
+
   // Застосовуємо фільтри до списку товарів
   const paginatedProducts = useMemo(() => {
     const typeLabels: Record<string, string> = {
@@ -2107,10 +2166,29 @@ export default function ProductsPage() {
 
   const handleSaveProduct = async (formData: ProductFormData) => {
     try {
+      // Спочатку інвалідуємо кеш
       invalidateCache();
-      await refreshProducts(); // Refresh the list
+      
+      // Затримка для того, щоб Strapi встиг обробити запит та опублікувати товар
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Оновлюємо список товарів з форсуванням
+      console.log('🔄 Refreshing products list after save...');
+      await fetchProducts(true);
+      
+      // Додаткова затримка та повторне оновлення для надійності
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await fetchProducts(true);
+      
+      // Додатково оновлюємо через router
       try { router.refresh(); } catch {}
-      try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
+      
+      // Диспатчимо подію для оновлення
+      try { 
+        if (typeof window !== 'undefined') { 
+          window.dispatchEvent(new CustomEvent('products:refresh')); 
+        } 
+      } catch {}
       // Log to recent activities
       try {
         append({
@@ -2239,28 +2317,6 @@ export default function ProductsPage() {
             flexDirection: isMobile ? 'column' : 'row',
             width: isMobile ? '100%' : 'auto'
           }}>
-            <Button
-              variant="outlined"
-              onClick={() => { invalidateCache(); refreshProducts(); }}
-              sx={{
-                borderRadius: '0.75rem',
-                border: '2px solid rgba(46, 125, 50, 0.3)',
-                color: '#2E7D32',
-                backgroundColor: 'rgba(46, 125, 50, 0.05)',
-                backdropFilter: 'blur(10px)',
-                fontWeight: 600,
-                textTransform: 'none',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  border: '2px solid rgba(46, 125, 50, 0.5)',
-                  backgroundColor: 'rgba(46, 125, 50, 0.1)',
-                },
-                minWidth: isMobile ? '100%' : 180,
-                py: 1,
-              }}
-            >
-              🔄 Примусово оновити товари
-            </Button>
             <Button
               variant="outlined"
               onClick={() => setShowVarieties(!showVarieties)}
@@ -2522,7 +2578,7 @@ export default function ProductsPage() {
                 background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.08) 0%, rgba(76, 175, 80, 0.05) 100%)',
               }}>
                 <TableCell align="center" sx={{ 
-                  width: isMobile ? '20%' : isTablet ? '25%' : '20%',
+                  width: isMobile ? '35%' : isTablet ? '25%' : '20%',
                   fontWeight: 700,
                   color: '#2E7D32',
                   fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
@@ -2609,17 +2665,17 @@ export default function ProductsPage() {
                 )}
                 {isMobile && (
                   <TableCell align="center" sx={{ 
-                    width: '50%',
+                    width: '25%',
                     fontWeight: 700,
                     color: '#2E7D32',
-                    fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
+                    fontSize: { xs: '0.7rem', sm: '0.85rem', md: '0.9rem' },
                     py: { xs: 1, sm: 1.5 }
                   }}>
                     Характеристики
                   </TableCell>
                 )}
                 <TableCell align="center" sx={{ 
-                  width: isMobile ? '30%' : isTablet ? '18%' : '20%',
+                  width: isMobile ? '40%' : isTablet ? '18%' : '20%',
                   fontWeight: 700,
                   color: '#2E7D32',
                   fontSize: { xs: '0.75rem', sm: '0.85rem', md: '0.9rem' },
@@ -2641,7 +2697,7 @@ export default function ProductsPage() {
                   }}
                 >
                   <TableCell sx={{ 
-                    width: isMobile ? '20%' : isTablet ? '25%' : '20%',
+                    width: isMobile ? '35%' : isTablet ? '25%' : '20%',
                     py: { xs: 1, sm: 1.5 }
                   }}>
                     <Box sx={{ 
@@ -2836,7 +2892,7 @@ export default function ProductsPage() {
                     </TableCell>
                   )}
                   {isMobile && (
-                    <TableCell sx={{ width: '50%' }}>
+                    <TableCell sx={{ width: '25%' }}>
                       <Grid container spacing={0.5}>
                         <Grid size={{ xs: 12 }}>
                           <Chip
@@ -3070,7 +3126,7 @@ export default function ProductsPage() {
                     </TableCell>
                   )}
                   <TableCell align="center" sx={{ 
-                    width: isMobile ? '30%' : isTablet ? '18%' : '20%',
+                    width: isMobile ? '15%' : isTablet ? '18%' : '20%',
                     py: { xs: 1, sm: 1.5 }
                   }}>
                     <Box sx={{ 

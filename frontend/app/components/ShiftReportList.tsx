@@ -91,21 +91,48 @@ export default function ShiftReportList({ onEdit, onAdd, refreshTrigger }: Shift
   const fetchReports = async () => {
     try {
       setLoading(true);
+      setError(null);
       console.log('Fetching shift reports...');
-      const response = await fetch('/api/shift-reports-graphql');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Shift reports data:', data);
-        // GraphQL API повертає { data: [...] }
-        setReports(data.data || []);
-        setError(null);
-      } else {
-        console.error('Failed to fetch shift reports:', response.status);
-        setError('Помилка при завантаженні звітів');
+      const response = await fetch('/api/shift-reports-graphql', {
+        cache: 'no-store',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to fetch shift reports:', response.status, errorData);
+        setError(`Помилка при завантаженні звітів: ${errorData.error || response.status}`);
+        setReports([]);
+        return;
       }
-    } catch (error) {
+      
+      const data = await response.json();
+      console.log('Shift reports data:', data);
+      
+      // GraphQL API повертає { data: [...] }
+      const reports = data.data || [];
+      
+      // Перетворюємо дані для сумісності з інтерфейсом
+      const transformedReports = reports.map((report: any) => ({
+        id: report.id || report.documentId,
+        documentId: report.documentId,
+        date: report.date,
+        worker: report.worker || { id: 0, name: 'Невідомо', slug: '' },
+        productsSnapshot: Array.isArray(report.itemsSnapshot) 
+          ? report.itemsSnapshot 
+          : (report.itemsSnapshot?.items || []),
+        shiftComment: report.shiftComment || '',
+        cash: report.cash || 0,
+        slug: report.slug || '',
+        createdAt: report.createdAt || '',
+        updatedAt: report.updatedAt || '',
+      }));
+      
+      setReports(transformedReports);
+      setError(null);
+    } catch (error: any) {
       console.error('Error fetching shift reports:', error);
-      setError('Помилка при завантаженні звітів');
+      setError(`Помилка при завантаженні звітів: ${error?.message || 'Невідома помилка'}`);
+      setReports([]);
     } finally {
       setLoading(false);
     }

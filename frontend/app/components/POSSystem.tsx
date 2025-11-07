@@ -312,7 +312,7 @@ export default function POSSystem() {
   return (
     <Box sx={{ 
       height: 'calc(100vh - 64px)',
-      background: 'linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%)',
+      background: 'linear-gradient(135deg, rgba(248, 249, 250, 0.98) 0%, rgba(233, 236, 239, 0.95) 100%), linear-gradient(135deg, rgba(46, 125, 50, 0.03) 0%, rgba(46, 125, 50, 0.01) 100%)',
       overflow: 'hidden',
       position: 'relative'
     }}>
@@ -326,13 +326,15 @@ export default function POSSystem() {
         }}>
           <Box sx={{ 
             flex: 1,
-            background: 'rgba(255, 255, 255, 0.9)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
             backdropFilter: 'blur(20px)',
-            borderRight: isMobile ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-            borderBottom: isMobile ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRight: isMobile ? 'none' : '1px solid rgba(46, 125, 50, 0.1)',
+            borderBottom: isMobile ? '1px solid rgba(46, 125, 50, 0.1)' : 'none',
             display: 'flex',
             flexDirection: 'column',
-            borderRadius: 0
+            borderRadius: 0,
+            boxShadow: '0 4px 16px rgba(46, 125, 50, 0.08)',
           }}>
           {/* Cart Items */}
           <Box sx={{ 
@@ -374,7 +376,14 @@ export default function POSSystem() {
                   <circle cx="10" cy="19" r="1.2" fill="currentColor"/>
                   <circle cx="16" cy="19" r="1.2" fill="currentColor"/>
                 </Box>
-                <Typography sx={{ textAlign: 'center', fontWeight: 400, color: 'text.secondary' }}>
+                <Typography sx={{ 
+                  textAlign: 'center', 
+                  fontWeight: 500, 
+                  color: 'text.secondary',
+                  fontFamily: 'var(--font-inter)',
+                  fontSize: { xs: '0.875rem', sm: '0.95rem' },
+                  letterSpacing: '0.01em',
+                }}>
                   Додайте товари в кошик
                 </Typography>
               </Box>
@@ -384,16 +393,18 @@ export default function POSSystem() {
                   <Card key={item.product.documentId} sx={{
                     height: { xs: 'auto', sm: 'auto' },
                     minHeight: { xs: '6rem', sm: '10rem' },
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(0.625rem)',
-                    borderRadius: '0.1875rem',
-                    border: '0.0625rem solid rgba(46, 125, 50, 0.1)',
-                    boxShadow: '0 0.125rem 0.75rem rgba(0, 0, 0, 0.08)',
-                    transition: 'all 0.2s ease-in-out',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRadius: 2,
+                    border: '1px solid rgba(46, 125, 50, 0.1)',
+                    boxShadow: '0 4px 16px rgba(46, 125, 50, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     overflow: 'hidden',
                     '&:hover': {
-                      boxShadow: '0 0.25rem 1rem rgba(46, 125, 50, 0.12)',
-                      transform: 'translateY(-0.0625rem)',
+                      boxShadow: '0 8px 24px rgba(46, 125, 50, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+                      transform: 'translateY(-2px)',
+                      borderColor: 'rgba(46, 125, 50, 0.2)',
                     }
                   }}>
                     <CardContent sx={{ 
@@ -403,15 +414,17 @@ export default function POSSystem() {
                     }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                         {/* Top Row: Image and Product Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', flex: 1, gap: { xs: 1.25, sm: 1.5, md: 1.75, lg: 2 } }}>
                           {/* Product Image */}
                           <Avatar
                             sx={{ 
-                              width: { xs: '2.5rem', sm: '3rem', md: '3.5rem', lg: '4rem' },
-                              height: { xs: '2.5rem', sm: '3rem', md: '3.5rem', lg: '4rem' },
+                              width: { xs: '3rem', sm: '3.5rem', md: '4rem', lg: '4.5rem' },
+                              height: { xs: '3rem', sm: '3.5rem', md: '4rem', lg: '4.5rem' },
                               backgroundColor: 'rgba(46, 125, 50, 0.1)',
-                              border: '0.0625rem solid rgba(46, 125, 50, 0.2)',
-                              fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem', lg: '1.25rem' }
+                              border: '1.5px solid rgba(46, 125, 50, 0.2)',
+                              fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem', lg: '1.5rem' },
+                              flexShrink: 0,
+                              boxShadow: '0 2px 8px rgba(46, 125, 50, 0.15)',
                             }}
                             src={item.product.image?.[0]?.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${item.product.image[0].url}` : undefined}
                           >
@@ -425,70 +438,102 @@ export default function POSSystem() {
                               sx={{ 
                                 fontWeight: 600,
                                 color: '#2E7D32',
-                                fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem', lg: '1.1rem' },
-                                mb: 0.25,
+                                fontSize: { xs: '0.9rem', sm: '1rem', md: '1.05rem', lg: '1.1rem' },
+                                mb: 0.75,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                transition: 'font-size 0.2s ease',
-                                '@media (max-width: 1200px)': {
-                                  fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' }
-                                },
-                                '@media (max-width: 900px)': {
-                                  fontSize: { xs: '0.6rem', sm: '0.7rem' }
-                                },
-                                '@media (max-width: 600px)': {
-                                  fontSize: '0.5rem'
-                                }
+                                fontFamily: 'var(--font-inter)',
+                                letterSpacing: '0.01em',
+                                lineHeight: 1.3,
                               }}
                             >
                               {item.product.name}
                             </Typography>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem', lg: '0.85rem' },
-                                color: 'rgba(0, 0, 0, 0.6)',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {item.product.price}₴ за одиницю
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                              <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                  fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.9rem', lg: '0.95rem' },
+                                  color: 'text.secondary',
+                                  fontFamily: 'var(--font-inter)',
+                                  letterSpacing: '0.01em',
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {item.product.price}
+                              </Typography>
+                              <Typography 
+                                component="span"
+                                sx={{ 
+                                  fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem', lg: '0.9rem' },
+                                  color: 'text.secondary',
+                                  fontFamily: 'var(--font-inter)',
+                                  letterSpacing: '-0.01em',
+                                  lineHeight: 1.4,
+                                  opacity: 0.85,
+                                }}
+                              >
+                                ₴
+                              </Typography>
+                              <Typography
+                                component="span"
+                                sx={{
+                                  fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem', lg: '0.85rem' },
+                                  color: 'text.secondary',
+                                  fontFamily: 'var(--font-inter)',
+                                  fontWeight: 400,
+                                  letterSpacing: '0.01em',
+                                  textTransform: 'lowercase',
+                                  opacity: 0.7,
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {item.product.productType === 'bouquet' ? 'букет' : 'за шт.'}
+                              </Typography>
+                            </Box>
                           </Box>
                         </Box>
 
                         {/* Bottom Row: Quantity Controls, Total Price, Remove Button */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: { xs: 1.5, sm: 1.75, md: 2 } }}>
                           {/* Quantity Controls */}
                           <Box sx={{ 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: { xs: 0.5, sm: 0.75, md: 1, lg: 1 }
+                            gap: { xs: 0.75, sm: 1, md: 1.25, lg: 1.5 },
+                            background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
+                            borderRadius: 2,
+                            px: { xs: 0.75, sm: 1, md: 1.25 },
+                            py: { xs: 0.5, sm: 0.75, md: 1 },
+                            border: '1px solid rgba(46, 125, 50, 0.1)',
                           }}>
                             <IconButton
                               size="small"
                               onClick={() => updateQuantity(item.product.documentId, item.quantity - 1)}
                               sx={{
-                                width: { xs: '1.2rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
-                                height: { xs: '1.2rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
+                                width: { xs: 28, sm: 32, md: 36, lg: 40 },
+                                height: { xs: 28, sm: 32, md: 36, lg: 40 },
                                 color: '#2E7D32',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
-                                  backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                                  backgroundColor: 'rgba(46, 125, 50, 0.15)',
+                                  transform: 'scale(1.05)',
                                 }
                               }}
                             >
-                              <RemoveIcon sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem', lg: '1rem' } }} />
+                              <RemoveIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem', lg: '1.3rem' } }} />
                             </IconButton>
                             <Typography 
                               variant="body1" 
                               sx={{ 
-                                minWidth: { xs: '0.8rem', sm: '1rem', md: '1.25rem', lg: '1.5rem' }, 
+                                minWidth: { xs: '1.5rem', sm: '2rem', md: '2.5rem', lg: '3rem' }, 
                                 textAlign: 'center',
-                                fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem', lg: '1rem' },
-                                fontWeight: 600,
-                                color: '#2E7D32'
+                                fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.1rem', lg: '1.15rem' },
+                                fontWeight: 700,
+                                color: '#2E7D32',
+                                fontFamily: 'var(--font-inter)',
+                                letterSpacing: '0.01em',
                               }}
                             >
                               {item.quantity}
@@ -497,30 +542,50 @@ export default function POSSystem() {
                               size="small"
                               onClick={() => updateQuantity(item.product.documentId, item.quantity + 1)}
                               sx={{
-                                width: { xs: '1.2rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
-                                height: { xs: '1.2rem', sm: '1.5rem', md: '1.75rem', lg: '2rem' },
+                                width: { xs: 28, sm: 32, md: 36, lg: 40 },
+                                height: { xs: 28, sm: 32, md: 36, lg: 40 },
                                 color: '#2E7D32',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
-                                  backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                                  backgroundColor: 'rgba(46, 125, 50, 0.15)',
+                                  transform: 'scale(1.05)',
                                 }
                               }}
                             >
-                              <AddIcon sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem', lg: '1rem' } }} />
+                              <AddIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem', lg: '1.3rem' } }} />
                             </IconButton>
                           </Box>
 
                           {/* Total Price */}
-                          <Typography 
-                            variant="h6" 
-                            sx={{ 
-                              fontWeight: 700,
-                              fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem', lg: '1rem' },
-                              color: '#2E7D32',
-                              textAlign: 'center'
-                            }}
-                          >
-                            {item.total}₴
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                            <Typography 
+                              variant="h6" 
+                              sx={{ 
+                                fontWeight: 700,
+                                fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem', lg: '1.25rem' },
+                                color: '#2E7D32',
+                                fontFamily: 'var(--font-inter)',
+                                letterSpacing: '-0.02em',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {item.total}
+                            </Typography>
+                            <Typography 
+                              component="span"
+                              sx={{ 
+                                color: '#2E7D32',
+                                fontWeight: 500,
+                                fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem', lg: '1.05rem' },
+                                fontFamily: 'var(--font-inter)',
+                                letterSpacing: '-0.01em',
+                                lineHeight: 1.2,
+                                opacity: 0.85,
+                              }}
+                            >
+                              ₴
+                            </Typography>
+                          </Box>
 
                           {/* Remove Button */}
                           <IconButton
@@ -528,14 +593,16 @@ export default function POSSystem() {
                             onClick={() => removeFromCart(item.product.documentId)}
                             sx={{
                               color: 'error.main',
-                              width: { xs: '1rem', sm: '1.2rem', md: '1.3rem', lg: '1.5rem' },
-                              height: { xs: '1rem', sm: '1.2rem', md: '1.3rem', lg: '1.5rem' },
+                              width: { xs: 32, sm: 36, md: 40 },
+                              height: { xs: 32, sm: 36, md: 40 },
+                              transition: 'all 0.2s ease',
                               '&:hover': {
                                 backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                transform: 'scale(1.1) rotate(90deg)',
                               }
                             }}
                           >
-                            <CloseIcon sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.8rem', lg: '0.9rem' } }} />
+                            <CloseIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem', lg: '1.3rem' } }} />
                           </IconButton>
                         </Box>
                       </Box>
@@ -550,7 +617,7 @@ export default function POSSystem() {
           <Box sx={{ 
             p: 3, 
             borderTop: '1px solid rgba(46, 125, 50, 0.1)',
-            background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
+            background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.12) 0%, rgba(46, 125, 50, 0.08) 100%)',
             backdropFilter: 'blur(10px)',
             borderRadius: 0
           }}>
@@ -566,29 +633,51 @@ export default function POSSystem() {
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 alignItems: 'center',
-                p: { xs: 0.5, sm: 1 },
-                background: 'rgba(255, 255, 255, 0.7)',
-                backdropFilter: 'blur(10px)',
+                p: { xs: 1.5, sm: 2, md: 2.5 },
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
                 borderRadius: 2,
-                border: '1px solid rgba(46, 125, 50, 0.1)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(46, 125, 50, 0.15)',
+                boxShadow: '0 4px 16px rgba(46, 125, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
                 flex: { xs: 1, sm: 'none' },
-                minHeight: { xs: '1.5rem', sm: 'auto' }
+                minHeight: { xs: 'auto', sm: 'auto' }
               }}>
                 <Typography variant="h6" color="textPrimary" sx={{ 
                   fontWeight: 600,
-                  fontSize: { xs: '0.6rem', sm: '1rem' }
+                  fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.01em',
+                  lineHeight: 1.3,
                 }}>
                   До оплати:
                 </Typography>
-                <Typography variant="h4" sx={{ 
-                  fontWeight: 700, 
-                  color: '#2E7D32',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                  fontSize: { xs: '0.7rem', sm: '1.5rem' }
-                }}>
-                  {total}₴
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                  <Typography variant="h4" sx={{ 
+                    fontWeight: 700, 
+                    color: '#2E7D32',
+                    fontFamily: 'var(--font-inter)',
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.2,
+                    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
+                  }}>
+                    {total}
+                  </Typography>
+                  <Typography 
+                    component="span"
+                    sx={{ 
+                      color: '#2E7D32',
+                      fontWeight: 500,
+                      fontSize: { xs: '1.25rem', sm: '1.75rem', md: '2rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1.2,
+                      opacity: 0.85,
+                    }}
+                  >
+                    ₴
+                  </Typography>
+                </Box>
               </Box>
               
               {/* Payment Button */}
@@ -650,24 +739,28 @@ export default function POSSystem() {
         }}>
           <Box sx={{ 
             flex: 1,
-            background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(76, 175, 80, 0.15) 50%, rgba(165, 214, 167, 0.1) 100%)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
             backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             display: 'flex',
             flexDirection: 'column',
             borderRadius: 0,
             border: '1px solid rgba(46, 125, 50, 0.1)',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            boxShadow: '0 4px 16px rgba(46, 125, 50, 0.08)',
           }}>
             {/* Products Header */}
-            <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ 
-              p: { xs: 1, sm: 2.6 }, 
-              borderBottom: '1px solid rgba(46, 125, 50, 0.2)',
-              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.15) 0%, rgba(76, 175, 80, 0.1) 100%)',
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ 
+              p: { xs: 2, sm: 3 }, 
+              borderBottom: '1px solid rgba(46, 125, 50, 0.1)',
+              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(46, 125, 50, 0.06) 100%)',
               backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
               borderRadius: 0,
               alignItems: 'center',
-              minHeight: { xs: '4rem', sm: '5.2rem' }
+              minHeight: { xs: '4rem', sm: '5.2rem' },
+              boxShadow: '0 2px 8px rgba(46, 125, 50, 0.05)',
             }}>
               {/* Category Filter */}
               <Grid size={{ xs: 6, sm: 6, md: 6, lg: 6 }}>
@@ -677,23 +770,40 @@ export default function POSSystem() {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     displayEmpty
                     sx={{
-                      borderRadius: 1,
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      backdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
-                      height: { xs: '1.8rem', sm: '2rem', md: '2.2rem', lg: '2.4rem' },
-                      fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem', lg: '1.1rem' },
+                      borderRadius: 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(10px)',
+                      WebkitBackdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(46, 125, 50, 0.15)',
+                      boxShadow: '0 2px 8px rgba(46, 125, 50, 0.08)',
+                      height: { xs: '2.5rem', sm: '2.75rem', md: '3rem' },
+                      fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem' },
                       width: '100%',
+                      fontFamily: 'var(--font-inter)',
+                      transition: 'all 0.2s ease',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                        border: '1px solid rgba(46, 125, 50, 0.4)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid rgba(46, 125, 50, 0.25)',
+                        boxShadow: '0 4px 12px rgba(46, 125, 50, 0.12)',
                       },
                       '&.Mui-focused': {
                         backgroundColor: 'rgba(255, 255, 255, 1)',
-                        border: '2px solid rgba(46, 125, 50, 0.6)',
-                        boxShadow: '0 6px 16px rgba(46, 125, 50, 0.25)',
-                      }
+                        border: '2px solid rgba(46, 125, 50, 0.4)',
+                        boxShadow: '0 4px 16px rgba(46, 125, 50, 0.15)',
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        sx: {
+                          borderRadius: 2,
+                          mt: 1,
+                          boxShadow: '0 8px 24px rgba(46, 125, 50, 0.15)',
+                          border: '1px solid rgba(46, 125, 50, 0.1)',
+                        },
+                      },
                     }}
                   >
                     {categories.map((category) => (
@@ -730,23 +840,30 @@ export default function POSSystem() {
                   sx={{ 
                     width: '100%',
                     '& .MuiOutlinedInput-root': {
-                      borderRadius: isMobile ? 1 : 3,
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      backdropFilter: 'blur(20px)',
-                      border: '1px solid rgba(255, 255, 255, 0.6)',
-                      boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
-                      height: isMobile ? '1.8rem' : '2.6rem',
-                      fontSize: isMobile ? '0.8rem' : '1rem',
+                      borderRadius: 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(10px)',
+                      WebkitBackdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(46, 125, 50, 0.15)',
+                      boxShadow: '0 2px 8px rgba(46, 125, 50, 0.08)',
+                      height: { xs: '2.5rem', sm: '2.75rem', md: '3rem' },
+                      fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem' },
                       width: '100%',
+                      fontFamily: 'var(--font-inter)',
+                      transition: 'all 0.2s ease',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                        border: '1px solid rgba(46, 125, 50, 0.4)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid rgba(46, 125, 50, 0.25)',
+                        boxShadow: '0 4px 12px rgba(46, 125, 50, 0.12)',
                       },
                       '&.Mui-focused': {
                         backgroundColor: 'rgba(255, 255, 255, 1)',
-                        border: '2px solid rgba(46, 125, 50, 0.6)',
-                        boxShadow: '0 6px 16px rgba(46, 125, 50, 0.25)',
-                      }
+                        border: '2px solid rgba(46, 125, 50, 0.4)',
+                        boxShadow: '0 4px 16px rgba(46, 125, 50, 0.15)',
+                      },
+                      '& fieldset': {
+                        border: 'none',
+                      },
                     }
                   }}
                 />
@@ -834,20 +951,22 @@ export default function POSSystem() {
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      background: 'rgba(255, 255, 255, 0.98)',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
                       backdropFilter: 'blur(20px)',
-                      boxShadow: '0 3px 12px rgba(0,0,0,0.2)',
-                      border: '1px solid rgba(255, 255, 255, 0.5)',
-                      transition: 'all 0.3s ease',
+                      WebkitBackdropFilter: 'blur(20px)',
+                      boxShadow: '0 4px 16px rgba(46, 125, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+                      border: '1px solid rgba(46, 125, 50, 0.1)',
+                      borderRadius: 2,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       cursor: 'pointer',
                       '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 8px 25px rgba(0,0,0,0.25)',
-                        background: 'rgba(255, 255, 255, 1)',
-                        border: '1px solid rgba(46, 125, 50, 0.3)',
+                        transform: 'translateY(-4px) scale(1.02)',
+                        boxShadow: '0 8px 32px rgba(46, 125, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%)',
+                        border: '1px solid rgba(46, 125, 50, 0.2)',
                       },
                       '&:active': {
-                        transform: 'translateY(-1px)',
+                        transform: 'translateY(-2px) scale(1.01)',
                       }
                     }}
                     onClick={() => addToCart(product)}
@@ -879,8 +998,8 @@ export default function POSSystem() {
                        variant="body2" 
                        sx={{ 
                          fontWeight: 600,
-                         mb: 0.5,
-                         fontSize: isMobile ? '0.8rem' : isTablet ? '0.9rem' : '1rem',
+                         mb: 0.75,
+                         fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem' },
                          display: 'flex',
                          alignItems: 'center',
                          justifyContent: 'center',
@@ -888,9 +1007,12 @@ export default function POSSystem() {
                          WebkitBoxOrient: 'vertical',
                          overflow: 'hidden',
                          textOverflow: 'ellipsis',
-                         minHeight: '2.2em',
-                         lineHeight: 1.1,
-                         textAlign: 'center'
+                         minHeight: '2.4em',
+                         lineHeight: 1.3,
+                         textAlign: 'center',
+                         fontFamily: 'var(--font-inter)',
+                         letterSpacing: '0.01em',
+                         color: 'text.primary',
                        }}
                      >
                        {product.name}
@@ -899,33 +1021,79 @@ export default function POSSystem() {
                        variant="caption" 
                        color={product.availableQuantity === 0 ? 'error' : 'textSecondary'}
                        sx={{ 
-                         fontSize: isMobile ? '0.5rem' : isTablet ? '0.55rem' : '0.6rem',
+                         fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
                          fontWeight: 500,
                          textAlign: 'center',
-                         backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                         borderRadius: 0.3,
-                         px: 0.5,
-                         py: 0.15,
+                         backgroundColor: product.availableQuantity === 0 
+                           ? 'rgba(244, 67, 54, 0.1)' 
+                           : 'rgba(46, 125, 50, 0.08)',
+                         borderRadius: 1.5,
+                         px: 1,
+                         py: 0.5,
                          display: 'inline-block',
                          minWidth: 'fit-content',
                          mx: 'auto',
-                         mb: 0.5
+                         mb: 0.75,
+                         fontFamily: 'var(--font-inter)',
+                         letterSpacing: '0.01em',
+                         border: product.availableQuantity === 0 
+                           ? '1px solid rgba(244, 67, 54, 0.2)' 
+                           : '1px solid rgba(46, 125, 50, 0.15)',
                        }}
                      >
                        Наявність {product.availableQuantity || 0}шт
                      </Typography>
-                     <Typography 
-                       variant="h6" 
-                       sx={{ 
-                         fontWeight: 700,
-                         fontSize: isMobile ? '0.9rem' : isTablet ? '1rem' : '1.1rem',
-                         color: 'primary.main',
-                         textAlign: 'center',
-                         mt: 0.5
-                       }}
-                     >
-                       {product.price}₴
-                     </Typography>
+                     <Box sx={{ 
+                       display: 'flex', 
+                       alignItems: 'center', 
+                       justifyContent: 'center', 
+                       gap: 0.75,
+                       mt: 0.75,
+                       flexWrap: 'wrap',
+                     }}>
+                       <Typography 
+                         variant="h6" 
+                         sx={{ 
+                           fontWeight: 700,
+                           fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.35rem' },
+                           color: 'primary.main',
+                           fontFamily: 'var(--font-inter)',
+                           letterSpacing: '-0.02em',
+                           lineHeight: 1.2,
+                         }}
+                       >
+                         {product.price}
+                       </Typography>
+                       <Typography 
+                         component="span"
+                         sx={{ 
+                           color: 'primary.main',
+                           fontWeight: 500,
+                           fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.15rem' },
+                           fontFamily: 'var(--font-inter)',
+                           letterSpacing: '-0.01em',
+                           lineHeight: 1.2,
+                           opacity: 0.85,
+                         }}
+                       >
+                         ₴
+                       </Typography>
+                       <Typography
+                         component="span"
+                         sx={{
+                           color: 'primary.main',
+                           fontFamily: 'var(--font-inter)',
+                           fontWeight: 500,
+                           fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                           letterSpacing: '0.01em',
+                           textTransform: 'lowercase',
+                           opacity: 0.75,
+                           lineHeight: 1,
+                         }}
+                       >
+                         {product.productType === 'bouquet' ? 'букет' : 'за шт.'}
+                       </Typography>
+                     </Box>
                   </CardContent>
                 </Card>
                 </Grid>
@@ -962,182 +1130,310 @@ export default function POSSystem() {
         fullWidth
         sx={{
           '& .MuiDialog-paper': {
-            width: isMobile ? '95%' : isTablet ? '70%' : '50%',
+            width: isMobile ? '95%' : isTablet ? '70%' : '55%',
             maxWidth: 'none',
             height: isMobile ? '90%' : 'auto',
-            maxHeight: isMobile ? '90%' : '85%',
+            maxHeight: isMobile ? '90%' : '90%',
             minHeight: isMobile ? '90%' : 'auto',
           }
         }}
         BackdropProps={{
           sx: {
-            background: 'rgba(0, 0, 0, 0.4)',
+            background: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
           }
         }}
         PaperProps={{
           sx: {
-            background: 'rgba(255, 255, 255, 0.85)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)',
             backdropFilter: 'blur(40px)',
-            borderRadius: '1.5rem',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
-            overflow: 'auto',
+            WebkitBackdropFilter: 'blur(40px)',
+            borderRadius: 0,
+            border: '1px solid rgba(46, 125, 50, 0.15)',
+            boxShadow: '0 24px 64px rgba(46, 125, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
             position: 'relative',
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'rgba(0,0,0,0.05)',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: 'rgba(46, 125, 50, 0.3)',
-              borderRadius: '4px',
-              '&:hover': {
-                background: 'rgba(46, 125, 50, 0.5)',
-              }
-            },
             '&::before': {
               content: '""',
               position: 'absolute',
               top: 0,
               left: 0,
               right: 0,
-              height: '1px',
-              background: 'linear-gradient(90deg, transparent, rgba(46, 125, 50, 0.2), transparent)',
+              height: '3px',
+              background: 'linear-gradient(90deg, #2E7D32 0%, #4CAF50 50%, #2E7D32 100%)',
+              zIndex: 11,
+            },
+            '& .MuiDialogContent-root': {
+              overflow: 'auto',
+              flex: 1,
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'rgba(46, 125, 50, 0.05)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'rgba(46, 125, 50, 0.3)',
+                borderRadius: '4px',
+                '&:hover': {
+                  background: 'rgba(46, 125, 50, 0.5)',
+                }
+              },
             }
           }
         }}
       >
+        <DialogContent sx={{ p: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <Box sx={{
-          p: { xs: '0.5rem', sm: '0.75rem', md: '1rem' },
-          pb: { xs: '0.375rem', sm: '0.5rem', md: '0.75rem' },
-          background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.03) 0%, rgba(76, 175, 80, 0.02) 100%)',
-          borderBottom: '1px solid rgba(46, 125, 50, 0.08)',
-          position: 'relative'
+          p: { xs: 2.5, sm: 3, md: 3.5 },
+          pb: { xs: 2, sm: 2.5, md: 3 },
+          background: 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)',
+          color: 'white',
+          position: 'relative',
+          zIndex: 10,
+          overflow: 'hidden',
+          flexShrink: 0,
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+            pointerEvents: 'none',
+          }
         }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
             <Typography variant="h4" sx={{ 
               fontWeight: 700, 
-              color: '#1A1A1A',
-              fontSize: { xs: '0.6rem', sm: '0.7rem', md: '1rem' },
-              letterSpacing: '-0.02em'
+              color: 'white',
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+              letterSpacing: '-0.02em',
+              fontFamily: 'var(--font-playfair)',
+              lineHeight: 1.2,
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}>
               Оформлення замовлення
             </Typography>
             <IconButton 
               onClick={handlePaymentCancel} 
               sx={{
-                width: { xs: '1.5rem', sm: '2rem' },
-                height: { xs: '1.5rem', sm: '2rem' },
+                width: { xs: 36, sm: 40 },
+                height: { xs: 36, sm: 40 },
                 borderRadius: '50%',
-                background: 'rgba(0, 0, 0, 0.05)',
+                background: 'rgba(255, 255, 255, 0.2)',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'white',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 '&:hover': {
-                  background: 'rgba(0, 0, 0, 0.1)',
-                  transform: 'scale(1.05)'
+                  background: 'rgba(255, 255, 255, 0.3)',
+                  transform: 'scale(1.1) rotate(90deg)',
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
                 }
               }}
             >
-              <CloseIcon sx={{ fontSize: { xs: '0.8rem', sm: '1rem' }, color: '#666' }} />
+              <CloseIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} />
             </IconButton>
           </Box>
         </Box>
 
-        <Box sx={{ p: { xs: '0.5rem', sm: '0.75rem', md: '1rem', lg: '1.25rem' }, pt: 0 }}>
+        <Box sx={{ 
+          p: { xs: 2.5, sm: 3, md: 3.5 }, 
+          pt: { xs: 2.5, sm: 3, md: 3.5 },
+          position: 'relative',
+          zIndex: 1,
+        }}>
           {/* Order Summary */}
           <Box sx={{ 
-            mb: { xs: '0.75rem', sm: '1rem', md: '1.25rem', lg: '1rem' },
-            background: 'rgba(46, 125, 50, 0.02)',
-            borderRadius: '0.75rem',
-            border: '1px solid rgba(46, 125, 50, 0.08)',
+            mb: { xs: 3, sm: 3.5, md: 4 },
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 2,
+            border: '1px solid rgba(46, 125, 50, 0.15)',
+            boxShadow: '0 8px 24px rgba(46, 125, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
             overflow: 'hidden',
             position: 'relative'
           }}>
             <Box sx={{
-              p: { xs: '0.5rem', sm: '0.625rem', md: '0.75rem' },
-              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
-              borderBottom: '1px solid rgba(46, 125, 50, 0.08)'
+              p: { xs: 2, sm: 2.5, md: 3 },
+              background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.08) 0%, rgba(76, 175, 80, 0.05) 100%)',
+              borderBottom: '1px solid rgba(46, 125, 50, 0.1)'
             }}>
               <Typography variant="h6" sx={{ 
                 fontWeight: 600, 
                 color: '#2E7D32',
-                fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.8rem' },
-                mb: 0
+                fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.3rem' },
+                mb: 0,
+                fontFamily: 'var(--font-inter)',
+                letterSpacing: '0.01em',
               }}>
-                Замовлення ({cart.length} товарів)
+                Замовлення ({cart.length} {cart.length === 1 ? 'товар' : cart.length < 5 ? 'товари' : 'товарів'})
               </Typography>
             </Box>
             
-            <Box sx={{ p: { xs: '0.5rem', sm: '0.625rem', md: '0.75rem' } }}>
+            <Box sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
               {cart.map((item, index) => (
                 <Box key={item.product.documentId} sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center',
-                  py: { xs: '0.25rem', sm: '0.375rem', md: '0.5rem' },
-                  borderBottom: index < cart.length - 1 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none'
+                  py: { xs: 1.5, sm: 1.75, md: 2 },
+                  borderBottom: index < cart.length - 1 ? '1px solid rgba(46, 125, 50, 0.1)' : 'none',
+                  transition: 'background-color 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(46, 125, 50, 0.03)',
+                  }
                 }}>
-                  <Typography variant="body1" sx={{ 
-                    fontWeight: 500,
-                    color: '#1A1A1A',
-                    fontSize: { xs: '0.45rem', sm: '0.55rem', md: '0.7rem' }
-                  }}>
-                    {item.product.name} × {item.quantity}
-                  </Typography>
-                  <Typography variant="body1" sx={{ 
-                    fontWeight: 600,
-                    color: '#2E7D32',
-                    fontSize: { xs: '0.45rem', sm: '0.55rem', md: '0.7rem' }
-                  }}>
-                    {item.total}₴
-                  </Typography>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body1" sx={{ 
+                      fontWeight: 600,
+                      color: 'text.primary',
+                      fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.1rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '0.01em',
+                      lineHeight: 1.4,
+                      mb: 0.25,
+                    }}>
+                      {item.product.name}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                      <Typography variant="body2" sx={{ 
+                        fontWeight: 500,
+                        color: 'text.secondary',
+                        fontSize: { xs: '0.8rem', sm: '0.875rem', md: '0.9rem' },
+                        fontFamily: 'var(--font-inter)',
+                        letterSpacing: '0.01em',
+                      }}>
+                        {item.quantity} × {item.product.price}₴
+                      </Typography>
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: 'text.secondary',
+                          fontFamily: 'var(--font-inter)',
+                          fontWeight: 400,
+                          fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
+                          letterSpacing: '0.01em',
+                          textTransform: 'lowercase',
+                          opacity: 0.7,
+                        }}
+                      >
+                        {item.product.productType === 'bouquet' ? 'букет' : 'за шт.'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, ml: 2 }}>
+                    <Typography variant="h6" sx={{ 
+                      fontWeight: 700,
+                      color: '#2E7D32',
+                      fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.35rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1.2,
+                    }}>
+                      {item.total}
+                    </Typography>
+                    <Typography 
+                      component="span"
+                      sx={{ 
+                        color: '#2E7D32',
+                        fontWeight: 500,
+                        fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.15rem' },
+                        fontFamily: 'var(--font-inter)',
+                        letterSpacing: '-0.01em',
+                        lineHeight: 1.2,
+                        opacity: 0.85,
+                      }}
+                    >
+                      ₴
+                    </Typography>
+                  </Box>
                 </Box>
               ))}
               
               <Box sx={{ 
-                mt: { xs: '0.5rem', sm: '0.625rem', md: '0.75rem' },
-                pt: { xs: '0.5rem', sm: '0.625rem', md: '0.75rem' },
-                borderTop: '2px solid rgba(46, 125, 50, 0.1)',
+                mt: { xs: 2, sm: 2.5, md: 3 },
+                pt: { xs: 2, sm: 2.5, md: 3 },
+                borderTop: '2px solid rgba(46, 125, 50, 0.15)',
                 display: 'flex', 
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
+                mx: { xs: -2, sm: -2.5, md: -3 },
+                px: { xs: 2, sm: 2.5, md: 3 },
+                borderRadius: '0 0 8px 8px',
               }}>
                 <Typography variant="h6" sx={{ 
                   fontWeight: 700,
-                  color: '#1A1A1A',
-                  fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.8rem' }
+                  color: 'text.primary',
+                  fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.3rem' },
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.01em',
                 }}>
                   Сума товарів:
                 </Typography>
-                <Typography variant="h6" sx={{ 
-                  fontWeight: 700,
-                  color: '#2E7D32',
-                  fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.8rem' }
-                }}>
-                  {subtotal}₴
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                  <Typography variant="h5" sx={{ 
+                    fontWeight: 700,
+                    color: '#2E7D32',
+                    fontSize: { xs: '1.35rem', sm: '1.5rem', md: '1.65rem' },
+                    fontFamily: 'var(--font-inter)',
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.2,
+                  }}>
+                    {subtotal}
+                  </Typography>
+                  <Typography 
+                    component="span"
+                    sx={{ 
+                      color: '#2E7D32',
+                      fontWeight: 500,
+                      fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.3rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1.2,
+                      opacity: 0.85,
+                    }}
+                  >
+                    ₴
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </Box>
 
           {/* Payment Method */}
-          <Box sx={{ mb: { xs: '0.75rem', sm: '1rem', md: '1.25rem' } }}>
+          <Box sx={{ 
+            mb: { xs: 3, sm: 3.5, md: 4 },
+            p: { xs: 2.5, sm: 3, md: 3.5 },
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 2,
+            border: '1px solid rgba(46, 125, 50, 0.15)',
+            boxShadow: '0 4px 16px rgba(46, 125, 50, 0.08)',
+          }}>
             <Typography variant="h6" sx={{ 
-              mb: { xs: '0.5rem', sm: '0.625rem', md: '0.75rem' }, 
+              mb: { xs: 2, sm: 2.5, md: 3 }, 
               fontWeight: 600,
-              color: '#1A1A1A',
-              fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.8rem' }
+              color: 'text.primary',
+              fontSize: { xs: '1.15rem', sm: '1.25rem', md: '1.35rem' },
+              fontFamily: 'var(--font-inter)',
+              letterSpacing: '0.01em',
             }}>
               Спосіб оплати
             </Typography>
             <Box sx={{ 
               display: 'flex', 
-              gap: '0.75rem',
+              gap: { xs: 1.5, sm: 2, md: 2.5 },
               flexDirection: { xs: 'row', sm: 'row', md: 'row' }
             }}>
               {[
@@ -1172,26 +1468,33 @@ export default function POSSystem() {
                   onClick={() => setPaymentMethod(method.value)}
                   sx={{
                     flex: 1,
-                    height: { xs: '3.2rem', sm: '3.8rem', md: '4.2rem' },
-                    borderRadius: '0.5rem',
+                    minHeight: { xs: '5rem', sm: '6rem', md: '7rem' },
+                    borderRadius: 2,
                     border: paymentMethod === method.value 
-                      ? '2px solid rgba(46, 125, 50, 0.3)' 
-                      : '1px solid rgba(0, 0, 0, 0.1)',
+                      ? '2px solid #2E7D32' 
+                      : '1px solid rgba(46, 125, 50, 0.2)',
                     background: paymentMethod === method.value 
-                      ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.08) 0%, rgba(76, 175, 80, 0.05) 100%)'
-                      : 'rgba(255, 255, 255, 0.5)',
+                      ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.12) 0%, rgba(76, 175, 80, 0.08) 100%)'
+                      : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 100%)',
                     backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.6rem',
+                    gap: { xs: 1, sm: 1.25, md: 1.5 },
+                    boxShadow: paymentMethod === method.value 
+                      ? '0 8px 24px rgba(46, 125, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6)'
+                      : '0 2px 8px rgba(46, 125, 50, 0.08)',
                     '&:hover': {
-                      border: '2px solid rgba(46, 125, 50, 0.2)',
-                      background: 'rgba(46, 125, 50, 0.05)',
-                      transform: 'translateY(-1px)'
+                      border: '2px solid rgba(46, 125, 50, 0.4)',
+                      background: paymentMethod === method.value 
+                        ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.15) 0%, rgba(76, 175, 80, 0.1) 100%)'
+                        : 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 24px rgba(46, 125, 50, 0.15)',
                     }
                   }}
                 >
@@ -1199,19 +1502,22 @@ export default function POSSystem() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    pt: { xs: '0.3rem', sm: '0.4rem' },
                     '& svg': {
-                      width: '1.75rem',
-                      height: '1.75rem'
+                      width: { xs: '2rem', sm: '2.25rem', md: '2.5rem' },
+                      height: { xs: '2rem', sm: '2.25rem', md: '2.5rem' },
+                      filter: paymentMethod === method.value ? 'drop-shadow(0 2px 4px rgba(46, 125, 50, 0.3))' : 'none',
+                      transition: 'all 0.3s ease',
                     }
                   }}>
                     {method.icon}
                   </Box>
                   <Typography sx={{ 
-                    fontWeight: paymentMethod === method.value ? 600 : 500,
-                    color: paymentMethod === method.value ? '#2E7D32' : '#1A1A1A',
-                    fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.9rem' },
-                    textAlign: 'center'
+                    fontWeight: paymentMethod === method.value ? 700 : 600,
+                    color: paymentMethod === method.value ? '#2E7D32' : 'text.primary',
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
+                    textAlign: 'center',
+                    fontFamily: 'var(--font-inter)',
+                    letterSpacing: '0.01em',
                   }}>
                     {method.label}
                   </Typography>
@@ -1221,55 +1527,81 @@ export default function POSSystem() {
           </Box>
 
           {/* Delivery */}
-          <Box sx={{ mb: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem', lg: '1rem' } }}>
+          <Box sx={{ 
+            mb: { xs: 3, sm: 3.5, md: 4 },
+            p: { xs: 2.5, sm: 3, md: 3.5 },
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 2,
+            border: '1px solid rgba(46, 125, 50, 0.15)',
+            boxShadow: '0 4px 16px rgba(46, 125, 50, 0.08)',
+          }}>
             <Box
               onClick={() => setIncludeDelivery(!includeDelivery)}
               sx={{
-                p: '0.75rem',
-                borderRadius: '0.5rem',
+                p: { xs: 2, sm: 2.5, md: 3 },
+                borderRadius: 2,
                 border: includeDelivery 
-                  ? '2px solid rgba(46, 125, 50, 0.3)' 
-                  : '1px solid rgba(0, 0, 0, 0.1)',
+                  ? '2px solid #2E7D32' 
+                  : '1px solid rgba(46, 125, 50, 0.2)',
                 background: includeDelivery 
-                  ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.08) 0%, rgba(76, 175, 80, 0.05) 100%)'
-                  : 'rgba(255, 255, 255, 0.5)',
+                  ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.12) 0%, rgba(76, 175, 80, 0.08) 100%)'
+                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.85) 100%)',
                 backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '0.75rem',
+                gap: 2,
+                boxShadow: includeDelivery 
+                  ? '0 4px 12px rgba(46, 125, 50, 0.15)'
+                  : '0 2px 8px rgba(46, 125, 50, 0.08)',
                 '&:hover': {
-                  border: '2px solid rgba(46, 125, 50, 0.2)',
-                  background: 'rgba(46, 125, 50, 0.05)',
-                  transform: 'translateY(-1px)'
+                  border: '2px solid rgba(46, 125, 50, 0.4)',
+                  background: includeDelivery 
+                    ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.15) 0%, rgba(76, 175, 80, 0.1) 100%)'
+                    : 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(76, 175, 80, 0.03) 100%)',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 24px rgba(46, 125, 50, 0.15)',
                 }
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2, md: 2.5 } }}>
                 <Box sx={{ 
-                  width: '1rem',
-                  height: '1rem',
-                  borderRadius: '0.25rem',
+                  width: { xs: 24, sm: 28, md: 32 },
+                  height: { xs: 24, sm: 28, md: 32 },
+                  borderRadius: 1.5,
                   border: '2px solid',
-                  borderColor: includeDelivery ? '#2E7D32' : '#ccc',
-                  background: includeDelivery ? '#2E7D32' : 'transparent',
+                  borderColor: includeDelivery ? '#2E7D32' : 'rgba(46, 125, 50, 0.3)',
+                  background: includeDelivery 
+                    ? 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)'
+                    : 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: includeDelivery ? '0 2px 8px rgba(46, 125, 50, 0.3)' : 'none',
                 }}>
                   {includeDelivery && (
-                    <Typography sx={{ color: 'white', fontSize: '0.6rem', fontWeight: 600 }}>
+                    <Typography sx={{ 
+                      color: 'white', 
+                      fontSize: { xs: '0.875rem', sm: '1rem', md: '1.125rem' }, 
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}>
                       ✓
                     </Typography>
                   )}
                 </Box>
                 <Typography sx={{ 
-                  fontWeight: includeDelivery ? 600 : 500,
-                  color: includeDelivery ? '#2E7D32' : '#1A1A1A',
-                  fontSize: '0.9rem'
+                  fontWeight: includeDelivery ? 700 : 600,
+                  color: includeDelivery ? '#2E7D32' : 'text.primary',
+                  fontSize: { xs: '1.05rem', sm: '1.15rem', md: '1.25rem' },
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.01em',
                 }}>
                   Доставка
                 </Typography>
@@ -1376,35 +1708,60 @@ export default function POSSystem() {
           </Box>
 
           {/* Order Comment */}
-          <Box sx={{ mb: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem', lg: '1rem' } }}>
+          <Box sx={{ 
+            mb: { xs: 3, sm: 3.5, md: 4 },
+            p: { xs: 2.5, sm: 3, md: 3.5 },
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: 2,
+            border: '1px solid rgba(46, 125, 50, 0.15)',
+            boxShadow: '0 4px 16px rgba(46, 125, 50, 0.08)',
+          }}>
             <Typography variant="h6" sx={{ 
-              mb: { xs: '0.5rem', sm: '0.625rem', md: '0.75rem' }, 
+              mb: { xs: 2, sm: 2.5, md: 3 }, 
               fontWeight: 600,
-              color: '#1A1A1A',
-              fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.8rem' }
+              color: 'text.primary',
+              fontSize: { xs: '1.15rem', sm: '1.25rem', md: '1.35rem' },
+              fontFamily: 'var(--font-inter)',
+              letterSpacing: '0.01em',
             }}>
               Коментар до замовлення
             </Typography>
             <TextField
               fullWidth
               multiline
-              rows={1}
+              rows={3}
               placeholder="Додаткові побажання, адреса доставки, тощо..."
               value={orderComment}
               onChange={(e) => setOrderComment(e.target.value)}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: '0.5rem',
-                  background: 'rgba(255, 255, 255, 0.7)',
+                  borderRadius: 2,
+                  background: 'rgba(255, 255, 255, 0.9)',
                   backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  fontSize: { xs: '0.5rem', sm: '0.6rem', md: '0.8rem' },
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(46, 125, 50, 0.2)',
+                  fontSize: { xs: '0.95rem', sm: '1rem', md: '1.05rem' },
+                  fontFamily: 'var(--font-inter)',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
                     border: '1px solid rgba(46, 125, 50, 0.3)',
+                    background: 'rgba(255, 255, 255, 0.95)',
                   },
                   '&.Mui-focused': {
                     border: '2px solid #2E7D32',
-                  }
+                    background: 'rgba(255, 255, 255, 1)',
+                    boxShadow: '0 0 0 3px rgba(46, 125, 50, 0.1)',
+                  },
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                },
+                '& .MuiInputBase-input': {
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.01em',
+                  lineHeight: 1.6,
                 }
               }}
             />
@@ -1412,49 +1769,100 @@ export default function POSSystem() {
 
           {/* Total */}
           <Box sx={{ 
-            mb: { xs: '1.5rem', sm: '1.5rem', md: '1.5rem', lg: '1rem' },
-            p: '1rem',
-            background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.08) 0%, rgba(76, 175, 80, 0.05) 100%)',
-            borderRadius: '0.75rem',
-            border: '1px solid rgba(46, 125, 50, 0.15)',
-            backdropFilter: 'blur(10px)'
+            mb: { xs: 2.5, sm: 3, md: 3.5 },
+            p: { xs: 3, sm: 3.5, md: 4 },
+            background: 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)',
+            borderRadius: 2,
+            border: '1px solid rgba(46, 125, 50, 0.3)',
+            boxShadow: '0 8px 32px rgba(46, 125, 50, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%)',
+              pointerEvents: 'none',
+            }
           }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              gap: { xs: 2, sm: 3, md: 4 },
+              flexWrap: { xs: 'wrap', sm: 'nowrap' },
+              position: 'relative',
+              zIndex: 1,
+            }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'baseline', 
+                gap: { xs: 1, sm: 1.5, md: 2 },
+                flexWrap: 'wrap',
+              }}>
                 <Typography variant="h6" sx={{ 
                   fontWeight: 700,
-                  color: '#1A1A1A',
-                  fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' }
+                  color: 'white',
+                  fontSize: { xs: '1.25rem', sm: '1.4rem', md: '1.5rem' },
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.01em',
+                  textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
                 }}>
                   До сплати:
                 </Typography>
-                <Typography variant="h5" sx={{ 
-                  fontWeight: 800, 
-                  color: '#2E7D32',
-                  fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                }}>
-                  {total}₴
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                  <Typography variant="h4" sx={{ 
+                    fontWeight: 700, 
+                    color: 'white',
+                    fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' },
+                    fontFamily: 'var(--font-inter)',
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.2,
+                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                  }}>
+                    {total}
+                  </Typography>
+                  <Typography 
+                    component="span"
+                    sx={{ 
+                      color: 'white',
+                      fontWeight: 500,
+                      fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '-0.01em',
+                      lineHeight: 1.2,
+                      opacity: 0.9,
+                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                    }}
+                  >
+                    ₴
+                  </Typography>
+                </Box>
               </Box>
               <Button
                 onClick={handlePaymentComplete}
                 variant="contained"
                 sx={{
-                  px: { xs: '1rem', sm: '1.5rem' },
-                  py: { xs: '0.4rem', sm: '0.5rem' },
-                  borderRadius: '0.5rem',
-                  background: 'linear-gradient(135deg, #2E7D32 0%, #4CAF50 100%)',
-                  color: 'white',
+                  px: { xs: 3, sm: 4, md: 5 },
+                  py: { xs: 1.5, sm: 1.75, md: 2 },
+                  borderRadius: 0,
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  color: '#2E7D32',
                   fontWeight: 700,
-                  fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                  fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' },
                   textTransform: 'none',
-                  boxShadow: '0 4px 16px rgba(46, 125, 50, 0.3)',
-                  border: 'none',
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.02em',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #1B5E20 0%, #388E3C 100%)',
+                    background: 'rgba(255, 255, 255, 1)',
+                    boxShadow: '0 6px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 1)',
                     transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 20px rgba(46, 125, 50, 0.4)'
                   }
                 }}
               >
@@ -1463,15 +1871,19 @@ export default function POSSystem() {
             </Box>
             {includeDelivery && (
               <Typography variant="body2" sx={{ 
-                mt: '0.5rem',
-                color: '#666',
-                fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                mt: { xs: 1.5, sm: 2, md: 2.5 },
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: { xs: '0.95rem', sm: '1rem', md: '1.05rem' },
+                fontFamily: 'var(--font-inter)',
+                letterSpacing: '0.01em',
+                textShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
               }}>
                 Включає доставку: {deliveryPrice}₴
               </Typography>
             )}
           </Box>
         </Box>
+        </DialogContent>
       </Dialog>
     </Box>
   );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
+const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // GET - отримати звіти про зміни через GraphQL
 export async function GET(request: NextRequest) {
@@ -12,20 +13,24 @@ export async function GET(request: NextRequest) {
 
     // Будуємо фільтри для GraphQL
     let filters = '';
-    const filterConditions = [];
     
     if (date) {
-      filterConditions.push(`date: { eq: "${date}" }`);
-    }
-    
-    if (month && year) {
-      const startDate = `${year}-${month.padStart(2, '0')}-01`;
-      const endDate = `${year}-${month.padStart(2, '0')}-31`;
-      filterConditions.push(`date: { between: ["${startDate}", "${endDate}"] }`);
-    }
-    
-    if (filterConditions.length > 0) {
-      filters = `(filters: { ${filterConditions.join(', ')} })`;
+      // Простий фільтр по даті
+      filters = `(filters: { date: { eq: "${date}" } })`;
+    } else if (month && year) {
+      // Фільтр по місяцю - використовуємо правильний синтаксис для Strapi v5
+      const monthNum = parseInt(month, 10);
+      const yearNum = parseInt(year, 10);
+      
+      // Отримуємо перший і останній день місяця
+      const startDate = new Date(yearNum, monthNum - 1, 1);
+      const endDate = new Date(yearNum, monthNum, 0); // Останній день місяця
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      // Використовуємо правильний синтаксис для Strapi v5 GraphQL з and
+      filters = `(filters: { and: [{ date: { gte: "${startDateStr}" } }, { date: { lte: "${endDateStr}" } }] })`;
     }
 
     const query = `
@@ -50,11 +55,19 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 GraphQL query for shift reports:', query);
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Додаємо токен тільки якщо він є
+    if (STRAPI_TOKEN) {
+      headers['Authorization'] = `Bearer ${STRAPI_TOKEN}`;
+    }
+
     const response = await fetch(`${STRAPI_URL}/graphql`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
+      cache: 'no-store',
       body: JSON.stringify({
         query,
       }),
@@ -62,8 +75,15 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ GraphQL error:', errorText);
-      throw new Error(`GraphQL request failed: ${response.status}`);
+      console.error('❌ GraphQL error:', response.status, errorText);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch shift reports',
+          details: errorText,
+          status: response.status
+        },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -71,24 +91,36 @@ export async function GET(request: NextRequest) {
 
     if (data.errors) {
       console.error('❌ GraphQL errors:', data.errors);
-      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
+      return NextResponse.json(
+        { 
+          error: 'GraphQL errors',
+          details: data.errors
+        },
+        { status: 400 }
+      );
     }
 
-    console.log('📦 Processed shift reports:', data.data.shiftReports);
+    // Обробляємо дані для сумісності з компонентами
+    const reports = (data.data?.shiftReports || []).map((report: any) => ({
+      ...report,
+      id: report.documentId, // Використовуємо documentId як id
+    }));
+
+    console.log('📦 Processed shift reports:', reports);
     return NextResponse.json({
-      data: data.data.shiftReports || []
+      data: reports
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching shift reports via GraphQL:', error);
     console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || undefined
     });
     return NextResponse.json(
       { 
         error: 'Failed to fetch shift reports',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error?.message || 'Unknown error'
       },
       { status: 500 }
     );

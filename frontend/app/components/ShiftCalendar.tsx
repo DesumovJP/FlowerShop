@@ -67,19 +67,45 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/shift-reports-graphql?month=${currentMonth + 1}&year=${currentYear}`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Calendar shift reports data:', data);
-        // GraphQL API повертає { data: [...] }
-        setReports(data.data || []);
-        setError(null);
-      } else {
-        setError('Помилка при завантаженні звітів');
+      setError(null);
+      const response = await fetch(`/api/shift-reports-graphql?month=${currentMonth + 1}&year=${currentYear}`, {
+        cache: 'no-store',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to fetch shift reports:', response.status, errorData);
+        setError(`Помилка при завантаженні звітів: ${errorData.error || response.status}`);
+        setReports([]);
+        return;
       }
-    } catch (error) {
+      
+      const data = await response.json();
+      console.log('Calendar shift reports data:', data);
+      
+      // GraphQL API повертає { data: [...] }
+      const reports = data.data || [];
+      
+      // Перетворюємо дані для сумісності з інтерфейсом
+      const transformedReports = reports.map((report: any) => ({
+        id: report.id || report.documentId,
+        documentId: report.documentId,
+        date: report.date,
+        worker: report.worker || { id: 0, name: 'Невідомо', slug: '' },
+        itemsSnapshot: report.itemsSnapshot || {},
+        shiftComment: report.shiftComment || '',
+        cash: report.cash || 0,
+        slug: report.slug || '',
+        createdAt: report.createdAt || '',
+        updatedAt: report.updatedAt || '',
+      }));
+      
+      setReports(transformedReports);
+      setError(null);
+    } catch (error: any) {
       console.error('Error fetching shift reports:', error);
-      setError('Помилка при завантаженні звітів');
+      setError(`Помилка при завантаженні звітів: ${error?.message || 'Невідома помилка'}`);
+      setReports([]);
     } finally {
       setLoading(false);
     }
@@ -155,8 +181,8 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(
-        <Grid key={`empty-${i}`} size={{ xs: 12/7 }}>
-          <Box sx={{ height: 120 }} />
+        <Grid key={`empty-${i}`} size={{ xs: 12/7, sm: 12/7, md: 12/7 }}>
+          <Box sx={{ height: { xs: 80, sm: 100, md: 120 } }} />
         </Grid>
       );
     }
@@ -169,38 +195,61 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
       const hasReport = !!report;
 
       days.push(
-        <Grid key={day} size={{ xs: 12/7 }}>
+        <Grid key={day} size={{ xs: 12/7, sm: 12/7, md: 12/7 }}>
           <Card
             sx={{
-              height: 100, // compact fixed card height
+              height: { xs: 80, sm: 100, md: 120 },
+              minHeight: { xs: 80, sm: 100, md: 120 },
               cursor: 'pointer',
               position: 'relative',
               border: today 
-                ? '2px solid #1976d2' 
+                ? { xs: '1.5px solid #1976d2', sm: '2px solid #1976d2' }
                 : hasReport 
-                  ? '1px solid rgba(46,125,50,0.2)' 
-                  : '1px solid #e0e0e0',
+                  ? { xs: '1px solid rgba(46,125,50,0.2)', sm: '1px solid rgba(46,125,50,0.2)' }
+                  : { xs: '1px solid #e0e0e0', sm: '1px solid #e0e0e0' },
               background: hasReport 
                 ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.30) 0%, rgba(76, 175, 80, 0.22) 40%, rgba(129, 199, 132, 0.18) 100%)' 
                 : 'rgba(255,255,255,0.9)',
               backdropFilter: hasReport ? 'blur(14px)' : 'none',
               WebkitBackdropFilter: hasReport ? 'blur(14px)' : 'none',
               boxShadow: hasReport 
-                ? '0 4px 14px rgba(46, 125, 50, 0.18), inset 0 1px 0 rgba(255,255,255,0.25)'
+                ? { xs: '0 2px 8px rgba(46, 125, 50, 0.15), inset 0 1px 0 rgba(255,255,255,0.25)', sm: '0 4px 14px rgba(46, 125, 50, 0.18), inset 0 1px 0 rgba(255,255,255,0.25)' }
                 : 'none',
               transition: 'all 0.2s ease',
               overflow: 'hidden',
+              '&:hover': {
+                transform: { xs: 'translateY(-2px)', sm: 'translateY(-3px)' },
+                boxShadow: hasReport 
+                  ? { xs: '0 4px 12px rgba(46, 125, 50, 0.25), inset 0 1px 0 rgba(255,255,255,0.3)', sm: '0 6px 18px rgba(46, 125, 50, 0.25), inset 0 1px 0 rgba(255,255,255,0.3)' }
+                  : { xs: '0 2px 8px rgba(0,0,0,0.1)', sm: '0 4px 12px rgba(0,0,0,0.12)' },
+              },
             }}
             onClick={() => handleDayClick(day)}
           >
-            <CardContent sx={{ p: 0.75, height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', mb: 0.5, minHeight: 18 }}>
+            <CardContent sx={{ 
+              p: { xs: 0.5, sm: 0.75, md: 1 }, 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column',
+              '&:last-child': { pb: { xs: 0.5, sm: 0.75, md: 1 } }
+            }}>
+              <Box sx={{ 
+                position: 'relative', 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: { xs: 0.4, sm: 0.5, md: 0.75 }, 
+                minHeight: { xs: 16, sm: 18, md: 20 } 
+              }}>
                 {/* Date left */}
                 <Typography
                   variant="caption"
                   sx={{
                     fontWeight: today ? 700 : 600,
                     color: today ? 'primary.main' : 'text.primary',
+                    fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                    fontFamily: 'var(--font-inter)',
+                    letterSpacing: '0.01em',
+                    lineHeight: 1.2,
                   }}
                 >
                   {day}
@@ -213,13 +262,18 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
                       position: 'absolute',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: 'text.primary',
-                      maxWidth: '80%',
+                      maxWidth: { xs: '75%', sm: '80%', md: '85%' },
                       textAlign: 'center',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      textOverflow: 'ellipsis',
+                      fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '0.01em',
+                      lineHeight: 1.2,
+                      opacity: 0.9,
                     }}
                   >
                     {report.worker?.name || 'Без робітника'}
@@ -234,23 +288,51 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
                   flexDirection: 'column', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
-                  gap: 0.25 
+                  gap: { xs: 0.2, sm: 0.25, md: 0.35 },
+                  minHeight: 0,
                 }}>
                   <Typography 
                     variant="caption" 
-                    sx={{ color: 'text.secondary', fontWeight: 600 }}
+                    sx={{ 
+                      color: 'text.secondary', 
+                      fontWeight: 500,
+                      fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '0.01em',
+                      lineHeight: { xs: 1.2, sm: 1.3 },
+                      opacity: 0.8,
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     Каса:
                   </Typography>
                   <Typography 
                     variant="subtitle2" 
-                    sx={{ color: 'success.main', fontWeight: 800, lineHeight: 1.1, fontSize: '0.95rem' }}
+                    sx={{ 
+                      color: 'success.main', 
+                      fontWeight: 700, 
+                      lineHeight: 1.1, 
+                      fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '-0.02em',
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     {report.cash}₴
                   </Typography>
                   <Typography 
                     variant="caption" 
-                    sx={{ color: 'text.secondary', fontWeight: 600 }}
+                    sx={{ 
+                      color: 'text.secondary', 
+                      fontWeight: 500,
+                      fontSize: { xs: '0.6rem', sm: '0.65rem', md: '0.7rem' },
+                      fontFamily: 'var(--font-inter)',
+                      letterSpacing: '0.01em',
+                      lineHeight: { xs: 1.2, sm: 1.3 },
+                      opacity: 0.8,
+                      whiteSpace: 'nowrap',
+                      textAlign: 'center',
+                    }}
                   >
                     Продажів: {(() => {
                       if (!report.itemsSnapshot) return 0;
@@ -264,7 +346,13 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
                   </Typography>
                 </Box>
               ) : (
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  minHeight: 0,
+                }}>
                   <Box
                     onClick={(e) => {
                       e.stopPropagation();
@@ -276,15 +364,21 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
                       justifyContent: 'center',
                       width: '100%',
                       height: '100%',
+                      minHeight: { xs: 40, sm: 50, md: 60 },
                       color: 'text.secondary',
-                      transition: 'color 0.2s ease, background-color 0.2s ease',
+                      transition: 'all 0.2s ease',
+                      borderRadius: 1,
                       '&:hover': {
                         color: 'primary.main',
-                        backgroundColor: 'rgba(25,118,210,0.04)'
+                        backgroundColor: 'rgba(25,118,210,0.06)',
+                        transform: 'scale(1.05)',
+                      },
+                      '&:active': {
+                        transform: 'scale(0.95)',
                       }
                     }}
                   >
-                    <AddIcon sx={{ fontSize: 28 }} />
+                    <AddIcon sx={{ fontSize: { xs: 18, sm: 22, md: 28 } }} />
                   </Box>
                 </Box>
               )}
@@ -316,26 +410,72 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
   return (
     <Box>
       {/* Header with month navigation */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={handlePreviousMonth}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: { xs: 2, sm: 2.5, md: 3 },
+        px: { xs: 0.5, sm: 0 },
+      }}>
+        <IconButton 
+          onClick={handlePreviousMonth}
+          sx={{
+            padding: { xs: 0.75, sm: 1 },
+            '& .MuiSvgIcon-root': {
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+            },
+          }}
+        >
           <ChevronLeftIcon />
         </IconButton>
         
-        <Typography variant="h5" sx={{ fontFamily: 'var(--font-playfair)', fontWeight: 700 }}>
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            fontFamily: 'var(--font-playfair)', 
+            fontWeight: 700,
+            fontSize: { xs: '1.1rem', sm: '1.5rem', md: '1.75rem' },
+            letterSpacing: '0.01em',
+            lineHeight: 1.2,
+            color: 'text.primary',
+            textAlign: 'center',
+            flex: 1,
+            px: { xs: 1, sm: 0 },
+          }}
+        >
           {monthNames[currentMonth]} {currentYear}
         </Typography>
         
-        <IconButton onClick={handleNextMonth}>
+        <IconButton 
+          onClick={handleNextMonth}
+          sx={{
+            padding: { xs: 0.75, sm: 1 },
+            '& .MuiSvgIcon-root': {
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+            },
+          }}
+        >
           <ChevronRightIcon />
         </IconButton>
       </Box>
 
       {/* Day names */}
-      <Grid container spacing={1} sx={{ mb: 1 }}>
+      <Grid container spacing={{ xs: 0.5, sm: 1 }} sx={{ mb: { xs: 0.75, sm: 1 } }}>
         {dayNames.map((dayName) => (
-          <Grid key={dayName} size={{ xs: 12/7 }}>
-            <Box sx={{ textAlign: 'center', py: 1 }}>
-              <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 600 }}>
+          <Grid key={dayName} size={{ xs: 12/7, sm: 12/7, md: 12/7 }}>
+            <Box sx={{ textAlign: 'center', py: { xs: 0.5, sm: 0.75, md: 1 } }}>
+              <Typography 
+                variant="body2" 
+                color="textSecondary" 
+                sx={{ 
+                  fontWeight: 600,
+                  fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                  fontFamily: 'var(--font-inter)',
+                  letterSpacing: '0.02em',
+                  lineHeight: 1.3,
+                  textTransform: 'uppercase',
+                }}
+              >
                 {dayName}
               </Typography>
             </Box>
@@ -344,37 +484,70 @@ export default function ShiftCalendar({ onDayClick, onAddShift, refreshTrigger }
       </Grid>
 
       {/* Calendar grid */}
-      <Grid container spacing={1}>
+      <Grid container spacing={{ xs: 0.5, sm: 1 }}>
         {renderCalendarDays()}
       </Grid>
 
       {/* Legend */}
-      <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Box sx={{ mt: { xs: 2, sm: 3 }, display: 'flex', gap: { xs: 1.5, sm: 2 }, flexWrap: 'wrap', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
-              width: 16,
-              height: 16,
+              width: { xs: 14, sm: 16 },
+              height: { xs: 14, sm: 16 },
               borderRadius: 1,
               backgroundColor: 'success.main',
             }}
           />
-          <Typography variant="caption">Зміна створена</Typography>
+          <Typography 
+            variant="caption"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+              fontFamily: 'var(--font-inter)',
+              fontWeight: 500,
+              letterSpacing: '0.01em',
+              color: 'text.secondary',
+            }}
+          >
+            Зміна створена
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
-              width: 16,
-              height: 16,
+              width: { xs: 14, sm: 16 },
+              height: { xs: 14, sm: 16 },
               borderRadius: 1,
               border: '2px solid #1976d2',
             }}
           />
-          <Typography variant="caption">Сьогодні</Typography>
+          <Typography 
+            variant="caption"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+              fontFamily: 'var(--font-inter)',
+              fontWeight: 500,
+              letterSpacing: '0.01em',
+              color: 'text.secondary',
+            }}
+          >
+            Сьогодні
+          </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AddIcon fontSize="small" color="action" />
-          <Typography variant="caption">Створити зміну</Typography>
+          <AddIcon sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }} color="action" />
+          <Typography 
+            variant="caption"
+            sx={{
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+              fontFamily: 'var(--font-inter)',
+              fontWeight: 500,
+              letterSpacing: '0.01em',
+              color: 'text.secondary',
+            }}
+          >
+            Створити зміну
+          </Typography>
         </Box>
       </Box>
     </Box>
