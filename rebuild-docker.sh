@@ -41,3 +41,4 @@ echo "📊 Для перегляду логів: docker-compose logs -f strapi"
 
 
 
+
