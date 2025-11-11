@@ -50,7 +50,7 @@ type GqlProduct = {
   name: string;
   slug: string;
   price: number;
-  productType: 'bouquet' | 'singleflower';
+  productType: 'bouquet' | 'singleflower' | 'composition' | 'else';
   description?: string;
   cardType: 'standart' | 'large';
   color?: string;
@@ -61,14 +61,21 @@ type GqlProduct = {
   publishedAt: string;
 };
 
-async function fetchProducts(page = 1, productType?: string): Promise<{ data: GqlProduct[], pagination: any }> {
+async function fetchProducts(
+  page = 1, 
+  productType?: string,
+  variety?: string,
+  color?: string,
+  search?: string
+): Promise<{ data: GqlProduct[], pagination: any }> {
   try {
-    console.log('Fetching products with params:', { page, productType });
+    console.log('Fetching products with params:', { page, productType, variety, color, search });
     
     // Використовуємо новий єдиний API для Product колекції
+    // Завантажуємо всі товари для фільтрації (великий pageSize)
     const params = new URLSearchParams({
-      page: page.toString(),
-      pageSize: '12'
+      page: '1',
+      pageSize: '1000' // Завантажуємо всі товари для фільтрації
     });
     
     if (productType && productType !== 'Всі продукти') {
@@ -76,7 +83,25 @@ async function fetchProducts(page = 1, productType?: string): Promise<{ data: Gq
         params.append('productType', 'bouquet');
       } else if (productType === 'Квітка') {
         params.append('productType', 'singleflower');
+      } else if (productType === 'Композиції') {
+        params.append('productType', 'composition');
+      } else if (productType === 'Аксесуари') {
+        // Аксесуари мають тип "else" в Strapi
+        params.append('productType', 'else');
       }
+    }
+    
+    // Додаємо фільтри для API
+    if (variety && variety !== 'Всі сорти') {
+      params.append('variety', variety);
+    }
+    
+    if (color && color !== 'Всі кольори') {
+      params.append('color', color);
+    }
+    
+    if (search) {
+      params.append('search', search);
     }
     
     const response = await fetch(`/api/products?${params.toString()}`, { cache: 'no-store' });
@@ -98,11 +123,12 @@ async function fetchProducts(page = 1, productType?: string): Promise<{ data: Gq
 
 async function fetchVarieties(): Promise<GqlVariety[]> {
   try {
-    const response = await fetch('/api/admin/varieties', { cache: 'no-store' });
+    const response = await fetch('/api/catalog-varieties', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const result = await response.json();
+    // catalog-varieties повертає { data: [...] }
     return result.data || [];
   } catch (error) {
     console.error('Error fetching varieties:', error);
@@ -130,7 +156,15 @@ export default function CatalogContent() {
   const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await fetchProducts(page, selectedType);
+      // Завжди завантажуємо з першої сторінки, але з усіма фільтрами
+      // Фільтрація відбувається на сервері через API
+      const result = await fetchProducts(
+        1, 
+        selectedType,
+        selectedVariety,
+        selectedColor,
+        searchTerm
+      );
       console.log('📦 Loaded products:', result.data);
       console.log('📦 Products count:', result.data.length);
       result.data.forEach((product, index) => {
@@ -143,7 +177,7 @@ export default function CatalogContent() {
     } finally {
       setLoading(false);
     }
-  }, [page, selectedType]);
+  }, [selectedType, selectedVariety, selectedColor, searchTerm]);
 
   // Fetch varieties
   const loadVarieties = useCallback(async () => {
@@ -155,53 +189,43 @@ export default function CatalogContent() {
     }
   }, []);
 
-  // Load data on mount
+  // Load data on mount and when filters change
   useEffect(() => {
     loadProducts();
     loadVarieties();
   }, [loadProducts, loadVarieties]);
 
-  // Filter products based on search and filters
-  const displayProducts = useMemo(() => {
-    let filtered = products;
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Фільтрація тепер відбувається на сервері через API
+  // Тому просто використовуємо products як є
+  // Групуємо товари за типами, якщо показуються всі товари
+  const groupedProducts = useMemo(() => {
+    if (selectedType !== 'Всі продукти') {
+      // Якщо вибрано конкретний тип, просто повертаємо товари без групування
+      return null;
     }
 
-    // Variety filter
-    if (selectedVariety !== 'Всі сорти') {
-      filtered = filtered.filter(product =>
-        product.varieties?.some(variety => variety.name === selectedVariety)
-      );
-    }
+    // Групуємо товари за типами
+    const groups: Record<string, GqlProduct[]> = {
+      bouquet: [],
+      singleflower: [],
+      composition: [],
+      else: []
+    };
 
-    // Color filter
-    if (selectedColor !== 'Всі кольори') {
-      const colorMapping: Record<string, string> = {
-        'red': 'Червоний',
-        'pink': 'Рожевий',
-        'white': 'Білий',
-        'yellow': 'Жовтий',
-        'purple': 'Фіолетовий',
-        'blue': 'Синій',
-        'green': 'Зелений',
-        'orange': 'Оранжевий',
-        'cream': 'Кремовий',
-        'peach': 'Персиковий'
-      };
-      
-      filtered = filtered.filter(product => {
-        const ukrainianColor = colorMapping[product.color || ''] || product.color;
-        return ukrainianColor === selectedColor;
-      });
-    }
+    products.forEach(product => {
+      if (product.productType && groups[product.productType]) {
+        groups[product.productType].push(product);
+      }
+    });
 
-    return filtered;
-  }, [products, searchTerm, selectedVariety, selectedColor]);
+    // Повертаємо масив груп з назвами в правильному порядку (пріоритет зверху вниз)
+    return [
+      { type: 'bouquet', name: 'Букети', products: groups.bouquet },
+      { type: 'singleflower', name: 'Одиночні квіти', products: groups.singleflower },
+      { type: 'composition', name: 'Композиції', products: groups.composition },
+      { type: 'else', name: 'Інші', products: groups.else }
+    ].filter(group => group.products.length > 0); // Показуємо тільки групи з товарами
+  }, [products, selectedType]);
 
   return (
     <Box sx={{ minHeight: '100vh', backgroundColor: theme.palette.background.default }}>
@@ -237,32 +261,80 @@ export default function CatalogContent() {
         />
 
         {/* Products Grid with Masonry Layout */}
-        <Box
-          key={`products-grid-${selectedType}`}
-          suppressHydrationWarning
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(4, 1fr)',
-            },
-            gridAutoFlow: 'row dense',
-            gap: { xs: 2, sm: 3 },
-            mb: 4,
-            // Let content define height and use page scroll
-            width: '100%'
-          }}
-        >
-          {displayProducts.map((product) => {
-            return (
+        {groupedProducts ? (
+          // Показуємо товари згруповані по типах з заголовками
+          <Box sx={{ mb: 4 }}>
+            {groupedProducts.map((group, groupIndex) => (
+              <Box key={group.type} sx={{ mb: 6 }}>
+                {/* Заголовок групи */}
+                <Typography
+                  variant="h4"
+                  component="h2"
+                  sx={{
+                    fontSize: { xs: '1.5rem', md: '2rem' },
+                    fontWeight: 700,
+                    color: 'text.primary',
+                    mb: 4,
+                    mt: groupIndex > 0 ? 6 : 0,
+                    fontFamily: 'var(--font-playfair)',
+                    borderBottom: '2px solid',
+                    borderColor: 'primary.main',
+                    pb: 2
+                  }}
+                >
+                  {group.name}
+                </Typography>
+                
+                {/* Товари групи */}
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, 1fr)',
+                      md: 'repeat(4, 1fr)',
+                    },
+                    gridAutoFlow: 'row dense',
+                    gap: { xs: 2, sm: 3 },
+                    width: '100%'
+                  }}
+                >
+                  {group.products.map((product) => (
+                    <ProductCard
+                      key={product.documentId}
+                      product={product as any}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          // Показуємо товари без групування (коли вибрано конкретний тип)
+          <Box
+            key={`products-grid-${selectedType}`}
+            suppressHydrationWarning
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                md: 'repeat(4, 1fr)',
+              },
+              gridAutoFlow: 'row dense',
+              gap: { xs: 2, sm: 3 },
+              mb: 4,
+              width: '100%'
+            }}
+          >
+            {products.map((product) => (
               <ProductCard
                 key={product.documentId}
                 product={product as any}
               />
-            );
-          })}
-        </Box>
+            ))}
+          </Box>
+        )}
 
         {/* Індикатор завантаження */}
         {loading && (

@@ -344,3 +344,19 @@ body.MuiModal-open {
 .glass-hover:hover img {
   filter: brightness(1) contrast(1);
 }
+
+/* Hide Next.js dev mode indicator for clean screenshots */
+[data-nextjs-toast-wrapper],
+#__next-build-watcher,
+.__next-build-watcher,
+[class*="nextjs-portal"],
+[class*="nextjs-toast"],
+nextjs-portal,
+.__nextjs__container__errors__label,
+.__nextjs__container__build_error,
+[data-nextjs-dialog-overlay],
+[id^="__next"] > div[style*="fixed"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

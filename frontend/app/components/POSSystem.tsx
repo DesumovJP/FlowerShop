@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useProductsStore, Product } from '../store/productsStore';
 import {
   Box,
@@ -133,9 +133,52 @@ export default function POSSystem() {
   // Фільтрація товарів
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.productType === selectedCategory;
+    // Маппимо 'accessory' на 'else' для сумісності зі Strapi
+    const productType = product.productType === 'accessory' ? 'else' : product.productType;
+    let matchesCategory = false;
+    if (selectedCategory === 'all') {
+      matchesCategory = true;
+    } else if (selectedCategory === 'accessory') {
+      // Фільтруємо товари з типом 'else' (аксесуари в Strapi)
+      matchesCategory = productType === 'else' || product.productType === 'accessory';
+    } else {
+      // Для інших категорій перевіряємо як productType, так і product.productType
+      matchesCategory = product.productType === selectedCategory || productType === selectedCategory;
+    }
     return matchesSearch && matchesCategory;
   });
+
+  // Групуємо товари за типами, якщо показуються всі товари
+  const groupedProducts = useMemo(() => {
+    if (selectedCategory !== 'all') {
+      // Якщо вибрано конкретний тип, просто повертаємо товари без групування
+      return null;
+    }
+
+    // Групуємо товари за типами
+    const groups: Record<string, Product[]> = {
+      bouquet: [],
+      singleflower: [],
+      composition: [],
+      else: []
+    };
+
+    filteredProducts.forEach(product => {
+      // Маппимо 'accessory' на 'else' для сумісності зі Strapi
+      const productType = product.productType === 'accessory' ? 'else' : product.productType;
+      if (productType && groups[productType]) {
+        groups[productType].push(product);
+      }
+    });
+
+    // Повертаємо масив груп з назвами в правильному порядку (пріоритет зверху вниз)
+    return [
+      { type: 'bouquet', name: 'Букети', products: groups.bouquet },
+      { type: 'singleflower', name: 'Одиночні квіти', products: groups.singleflower },
+      { type: 'composition', name: 'Композиції', products: groups.composition },
+      { type: 'else', name: 'Інші', products: groups.else }
+    ].filter(group => group.products.length > 0); // Показуємо тільки групи з товарами
+  }, [filteredProducts, selectedCategory]);
 
   // Додавання товару в кошик
   const addToCart = (product: Product) => {
@@ -810,10 +853,8 @@ export default function POSSystem() {
                       <MenuItem 
                         key={category.id} 
                         value={category.id}
-                        disabled={category.id === 'composition' || category.id === 'accessory'}
                         sx={{
                           fontSize: { xs: '0.8rem', sm: '0.9rem', md: '1rem', lg: '1.1rem' },
-                          opacity: category.id === 'composition' || category.id === 'accessory' ? 0.5 : 1,
                         }}
                       >
                         {category.icon} {category.name}
@@ -943,8 +984,33 @@ export default function POSSystem() {
               )}
 
               {/* Відображення товарів */}
-              {!loading && filteredProducts.slice(0, 12).map((product) => (
-                <Grid key={product.documentId} size={{ xs: 6, sm: 4, md: 4, lg: 3 }}>
+              {!loading && groupedProducts ? (
+                // Показуємо товари згруповані по типах з заголовками
+                <>
+                  {groupedProducts.map((group, groupIndex) => (
+                    <React.Fragment key={group.type}>
+                      {/* Заголовок групи */}
+                      <Grid size={12} sx={{ mt: groupIndex > 0 ? 3 : 0, mb: 2 }}>
+                        <Typography
+                          variant="h6"
+                          component="h2"
+                          sx={{
+                            fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' },
+                            fontWeight: 700,
+                            color: 'text.primary',
+                            fontFamily: 'var(--font-inter)',
+                            borderBottom: '2px solid',
+                            borderColor: 'primary.main',
+                            pb: 1
+                          }}
+                        >
+                          {group.name}
+                        </Typography>
+                      </Grid>
+                      
+                      {/* Товари групи */}
+                      {group.products.map((product) => (
+                        <Grid key={product.documentId} size={{ xs: 6, sm: 4, md: 4, lg: 3 }}>
                   <Card
                     sx={{
                       height: '100%',
@@ -1096,26 +1162,168 @@ export default function POSSystem() {
                      </Box>
                   </CardContent>
                 </Card>
-                </Grid>
-              ))}
-              
-              {/* Показуємо індикатор якщо товарів більше 12 */}
-              {filteredProducts.length > 12 && (
-                <Grid size={12}>
-                  <Box sx={{ 
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    p: 2,
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: 1,
-                    border: '0.1% dashed #ccc'
-                  }}>
-                    <Typography variant="body2" color="textSecondary">
-                      Показано 12 з {filteredProducts.length} товарів
-                    </Typography>
-                  </Box>
-                </Grid>
+                        </Grid>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </>
+              ) : (
+                // Показуємо товари без групування (коли вибрано конкретний тип)
+                filteredProducts.map((product) => (
+                  <Grid key={product.documentId} size={{ xs: 6, sm: 4, md: 4, lg: 3 }}>
+                    <Card
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        boxShadow: '0 4px 16px rgba(46, 125, 50, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+                        border: '1px solid rgba(46, 125, 50, 0.1)',
+                        borderRadius: 2,
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          transform: 'translateY(-4px) scale(1.02)',
+                          boxShadow: '0 8px 32px rgba(46, 125, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+                          background: 'linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.95) 100%)',
+                          border: '1px solid rgba(46, 125, 50, 0.2)',
+                        },
+                        '&:active': {
+                          transform: 'translateY(-2px) scale(1.01)',
+                        }
+                      }}
+                      onClick={() => addToCart(product)}
+                    >
+                      <CardContent sx={{ 
+                        p: isMobile ? 1 : isTablet ? 1 : 1.5, 
+                        textAlign: 'center', 
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                      }}>
+                        <Avatar
+                          sx={{ 
+                            width: isMobile ? '3rem' : isTablet ? '2.5rem' : '4.5rem', 
+                            height: isMobile ? '3rem' : isTablet ? '2.5rem' : '4.5rem', 
+                            mx: 'auto', 
+                            mb: isMobile ? 1 : isTablet ? 0.5 : 1,
+                            backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                            fontSize: isMobile ? '1rem' : isTablet ? '0.9rem' : '1.4rem',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            border: '2px solid rgba(255, 255, 255, 0.8)'
+                          }}
+                          src={product.image?.[0]?.url ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337'}${product.image[0].url}` : undefined}
+                        >
+                          🌸
+                        </Avatar>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontWeight: 600,
+                            mb: 0.75,
+                            fontSize: { xs: '0.875rem', sm: '0.95rem', md: '1rem' },
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            minHeight: '2.4em',
+                            lineHeight: 1.3,
+                            textAlign: 'center',
+                            fontFamily: 'var(--font-inter)',
+                            letterSpacing: '0.01em',
+                            color: 'text.primary',
+                          }}
+                        >
+                          {product.name}
+                        </Typography>
+                        <Typography 
+                          variant="caption" 
+                          color={product.availableQuantity === 0 ? 'error' : 'textSecondary'}
+                          sx={{ 
+                            fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                            fontWeight: 500,
+                            textAlign: 'center',
+                            backgroundColor: product.availableQuantity === 0 
+                              ? 'rgba(244, 67, 54, 0.1)' 
+                              : 'rgba(46, 125, 50, 0.08)',
+                            borderRadius: 1.5,
+                            px: 1,
+                            py: 0.5,
+                            display: 'inline-block',
+                            minWidth: 'fit-content',
+                            mx: 'auto',
+                            mb: 0.75,
+                            fontFamily: 'var(--font-inter)',
+                            letterSpacing: '0.01em',
+                            border: product.availableQuantity === 0 
+                              ? '1px solid rgba(244, 67, 54, 0.2)' 
+                              : '1px solid rgba(46, 125, 50, 0.15)',
+                          }}
+                        >
+                          Наявність {product.availableQuantity || 0}шт
+                        </Typography>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: 0.75,
+                          mt: 0.75,
+                          flexWrap: 'wrap',
+                        }}>
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              fontWeight: 700,
+                              fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.35rem' },
+                              color: 'primary.main',
+                              fontFamily: 'var(--font-inter)',
+                              letterSpacing: '-0.02em',
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {product.price}
+                          </Typography>
+                          <Typography 
+                            component="span"
+                            sx={{ 
+                              color: 'primary.main',
+                              fontWeight: 500,
+                              fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.15rem' },
+                              fontFamily: 'var(--font-inter)',
+                              letterSpacing: '-0.01em',
+                              lineHeight: 1.2,
+                              opacity: 0.85,
+                            }}
+                          >
+                            ₴
+                          </Typography>
+                          <Typography
+                            component="span"
+                            sx={{
+                              color: 'primary.main',
+                              fontFamily: 'var(--font-inter)',
+                              fontWeight: 500,
+                              fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+                              letterSpacing: '0.01em',
+                              textTransform: 'lowercase',
+                              opacity: 0.75,
+                              lineHeight: 1,
+                            }}
+                          >
+                            {product.productType === 'bouquet' ? 'букет' : 'за шт.'}
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))
               )}
             </Grid>
           </Box>

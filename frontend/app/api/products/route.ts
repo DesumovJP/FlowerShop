@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
     });
 
     // Будуємо фільтри для GraphQL
-    let filters = '';
     const filterConditions = [];
     
     if (productType) {
@@ -35,21 +34,25 @@ export async function GET(request: NextRequest) {
     }
     
     if (color) {
-      // Переводимо український колір в латинський для фільтрації
+      // Переводимо український колір в translit формат, який використовується в Strapi
       const colorMapping: Record<string, string> = {
-        'Червоний': 'red',
-        'Рожевий': 'pink',
-        'Білий': 'white',
-        'Жовтий': 'yellow',
-        'Фіолетовий': 'purple',
-        'Синій': 'blue',
-        'Зелений': 'green',
-        'Оранжевий': 'orange',
-        'Кремовий': 'cream',
-        'Персиковий': 'peach'
+        'Червоний': 'chervonij',
+        'Рожевий': 'rozhevyj',
+        'Білий': 'bilyj',
+        'Жовтий': 'zhyovtyj',
+        'Фіолетовий': 'fioletovij',
+        'Синій': 'synij',
+        'Зелений': 'zelenyj',
+        'Помаранчевий': 'oranzhevyj',
+        'Оранжевий': 'oranzhevyj',
+        'Кремовий': 'kremovyj',
+        'Персиковий': 'peach',
+        'Голубий': 'golubyj',
+        'Бордовий': 'bordovyj',
+        'Мікс': 'miks'
       };
-      const latinColor = colorMapping[color] || color;
-      filterConditions.push(`color: { eq: "${latinColor}" }`);
+      const strapiColor = colorMapping[color] || color;
+      filterConditions.push(`color: { eq: "${strapiColor}" }`);
     }
     
     if (search) {
@@ -59,13 +62,23 @@ export async function GET(request: NextRequest) {
     // Завжди фільтруємо тільки публіковані продукти
     filterConditions.push('publishedAt: { notNull: true }');
     
+    // Додаємо пагінацію до GraphQL запиту, щоб отримати всі товари
+    const pageSizeInt = parseInt(pageSize);
+    const pageInt = parseInt(page);
+    const paginationParams = pageSizeInt >= 1000 
+      ? 'pagination: { pageSize: 1000 }' 
+      : `pagination: { page: ${pageInt}, pageSize: ${pageSizeInt} }`;
+    
+    // Будуємо параметри для GraphQL запиту
+    const queryParams = [];
     if (filterConditions.length > 0) {
-      filters = `(filters: { ${filterConditions.join(', ')} })`;
+      queryParams.push(`filters: { ${filterConditions.join(', ')} }`);
     }
-
+    queryParams.push(paginationParams);
+    
     const query = `
           query GetAllProducts {
-            products${filters} {
+            products(${queryParams.join(', ')}) {
               documentId
               name
               slug
@@ -122,18 +135,29 @@ export async function GET(request: NextRequest) {
 
     const products = data.data.products || [];
     
-    // Простий пагінація на фронтенді
-    const startIndex = (parseInt(page) - 1) * parseInt(pageSize);
-    const endIndex = startIndex + parseInt(pageSize);
-    const paginatedProducts = products.slice(startIndex, endIndex);
-    const total = products.length;
-    const pageCount = Math.ceil(total / parseInt(pageSize));
+    // Якщо pageSize великий (>= 1000), повертаємо всі товари без пагінації
+    // Це потрібно для фільтрації на клієнті
+    // pageSizeInt та pageInt вже оголошені вище
+    
+    let paginatedProducts = products;
+    let total = products.length;
+    let pageCount = 1;
+    
+    // Застосовуємо пагінацію тільки якщо pageSize менше 1000
+    if (pageSizeInt < 1000) {
+      const startIndex = (pageInt - 1) * pageSizeInt;
+      const endIndex = startIndex + pageSizeInt;
+      paginatedProducts = products.slice(startIndex, endIndex);
+      pageCount = Math.ceil(total / pageSizeInt);
+    }
+
+    console.log(`Returning ${paginatedProducts.length} products (total: ${total}, pageSize: ${pageSizeInt})`);
 
     return NextResponse.json({
       data: paginatedProducts,
       pagination: {
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
+        page: pageInt,
+        pageSize: pageSizeInt,
         pageCount,
         total
       }
@@ -151,7 +175,10 @@ export async function GET(request: NextRequest) {
 // Create a new product (admin)
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔐 POST /api/products - Checking STRAPI_TOKEN:', STRAPI_TOKEN ? `Token present (${STRAPI_TOKEN.substring(0, 10)}...)` : 'Token missing');
+    
     if (!STRAPI_TOKEN) {
+      console.error('❌ STRAPI_API_TOKEN is not set in environment');
       return NextResponse.json(
         { 
           error: 'Missing STRAPI_API_TOKEN in environment. Please create a .env.local file in the frontend directory with STRAPI_API_TOKEN=your_token_here. See ENV_SETUP.md for instructions.' 
@@ -161,6 +188,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('📦 POST /api/products - Request body:', JSON.stringify(body, null, 2));
 
     // Expecting body to be a flat payload from admin page; wrap for Strapi REST
     // Додаємо publishedAt для автоматичної публікації товару
@@ -171,6 +199,9 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log('🚀 POST /api/products - Sending to Strapi:', `${STRAPI_URL}/api/products`);
+    console.log('📤 POST /api/products - Strapi payload:', JSON.stringify(strapiPayload, null, 2));
+    
     const response = await fetch(`${STRAPI_URL}/api/products`, {
       method: 'POST',
       headers: {
@@ -180,9 +211,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(strapiPayload),
     });
 
+    console.log('📥 POST /api/products - Strapi response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error creating product in Strapi:', errorText);
+      console.error('❌ Error creating product in Strapi:', errorText);
       
       // Спробуємо парсити помилку від Strapi
       let strapiError = `Failed to create product: ${response.status} ${response.statusText}`;

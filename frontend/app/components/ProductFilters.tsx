@@ -101,7 +101,11 @@ const colorMapping: Record<string, string> = {
   'golubyj': 'Голубий',
   'oranzhevyj': 'Помаранчевий',
   'pomaranchevyj': 'Помаранчевий',
-  'zelenyj': 'Зелений'
+  'zelenyj': 'Зелений',
+  // missing translits
+  'bordovyj': 'Бордовий',
+  'kremovyj': 'Кремовий',
+  'miks': 'Мікс'
 };
 
 // Функція для отримання кольору
@@ -115,6 +119,7 @@ const getColorValue = (color: string) => {
     'Синій': '#4299e1',
     'Зелений': '#68d391',
     'Оранжевий': '#ed8936',
+    'Бордовий': '#7b1e3a',
     'Кремовий': '#fef5e7',
     'Персиковий': '#fed7d7'
   };
@@ -184,7 +189,7 @@ export default function ProductFilters({
       'bouquet': 'Букети',
       'singleflower': 'Квітка',
       'composition': 'Композиції',
-      'accessory': 'Аксесуари'
+      'else': 'Аксесуари' // Аксесуари мають тип "else" в Strapi
     };
     
     return ['Всі продукти', ...uniqueTypes.map(type => typeLabels[type] || type)];
@@ -431,7 +436,12 @@ export default function ProductFilters({
                               width: 16,
                               height: 16,
                               borderRadius: '50%',
-                              backgroundColor: getColorValue(color),
+                              ...(color === 'Мікс'
+                                ? {
+                                    background:
+                                      'linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080)'
+                                  }
+                                : { backgroundColor: getColorValue(color) }),
                               border: '1px solid',
                               borderColor: theme.palette.grey[300],
                             }}
@@ -528,7 +538,7 @@ export default function ProductFilters({
                               'bouquet': 'Букети',
                               'singleflower': 'Квітка',
                               'composition': 'Композиції',
-                              'accessory': 'Аксесуари'
+                              'else': 'Аксесуари' // Аксесуари мають тип "else" в Strapi
                             };
                             return typeLabels[p.productType] === type;
                           }).length}

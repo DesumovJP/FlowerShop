@@ -10,11 +10,16 @@ export async function GET(
     const { id } = await params;
     console.log('Fetching product with ID/slug:', id);
 
-    // Використовуємо простий запит для всіх продуктів
-    // Для адмінки також показуємо неопубліковані товари
+    // Використовуємо GraphQL запит з фільтром по slug для публічного API
+    // Фільтруємо тільки опубліковані товари
     const query = `
-      query GetAllProducts {
-        products {
+      query GetProductBySlug {
+        products(
+          filters: { 
+            slug: { eq: "${id}" },
+            publishedAt: { notNull: true }
+          }
+        ) {
           documentId
           name
           slug
@@ -68,27 +73,80 @@ export async function GET(
       throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
     }
     
-    // Шукаємо продукт по slug або documentId
-    const products = data.data.products || [];
-    console.log('All products:', products.map(p => ({ documentId: p.documentId, slug: p.slug, name: p.name })));
-    console.log('Looking for:', id);
+    // Отримуємо продукт з відповіді (GraphQL вже відфільтрував по slug)
+    const products = data.data?.products || [];
+    console.log('Products found:', products.length);
     
-    const product = products.find((p: any) => {
-      const matchesSlug = p.slug === id;
-      const matchesDocumentId = p.documentId === id;
-      console.log(`Product ${p.name}: slug=${p.slug}, documentId=${p.documentId}, matchesSlug=${matchesSlug}, matchesDocumentId=${matchesDocumentId}`);
-      return matchesSlug || matchesDocumentId;
-    });
-    
-    if (product) {
-      return NextResponse.json({ product });
+    if (products.length === 0) {
+      // Якщо не знайдено по slug, спробуємо знайти по documentId
+      console.log('Product not found by slug, trying documentId:', id);
+      
+      const queryById = `
+        query GetProductById {
+          products(
+            filters: { 
+              documentId: { eq: "${id}" },
+              publishedAt: { notNull: true }
+            }
+          ) {
+            documentId
+            name
+            slug
+            price
+            productType
+            availableQuantity
+            color
+            description
+            cardType
+            image {
+              documentId
+              url
+              alternativeText
+              width
+              height
+            }
+            varieties {
+              documentId
+              name
+              slug
+            }
+            createdAt
+            updatedAt
+            publishedAt
+          }
+        }
+      `;
+      
+      const responseById = await fetch(`${STRAPI_URL}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: queryById,
+        }),
+      });
+      
+      if (responseById.ok) {
+        const dataById = await responseById.json();
+        if (!dataById.errors && dataById.data?.products?.length > 0) {
+          const product = dataById.data.products[0];
+          console.log('Product found by documentId:', product.name);
+          return NextResponse.json({ product });
+        }
+      }
+      
+      console.error('Product not found by slug or documentId');
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
     }
-
-    console.error('Product not found');
-    return NextResponse.json(
-      { error: 'Product not found' },
-      { status: 404 }
-    );
+    
+    // Знайдено продукт по slug
+    const product = products[0];
+    console.log('Product found by slug:', product.name);
+    return NextResponse.json({ product });
 
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -153,7 +211,7 @@ export async function PUT(
       }
     `;
 
-    const response = await fetch(`${STRAPI_URL}/graphql`, {
+    let response = await fetch(`${STRAPI_URL}/graphql`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -168,23 +226,125 @@ export async function PUT(
       }),
     });
 
+    // REST fallback if GraphQL fails (e.g., 401 or schema mismatch)
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('GraphQL update error:', errorText);
-      return NextResponse.json(
-        { error: `Failed to update product: ${response.status} ${response.statusText}` },
-        { status: response.status }
-      );
+      const errText = await response.text();
+      console.warn('GraphQL update failed, trying REST fallback. Status:', response.status, errText);
+
+      // Try to resolve numeric ID via direct REST API call to Strapi
+      // Use the documentId directly as a path parameter
+      const restRes = await fetch(`${STRAPI_URL}/api/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${STRAPI_TOKEN}`,
+        },
+        body: JSON.stringify({ data: processedData }),
+      });
+
+      if (!restRes.ok) {
+        const txt = await restRes.text();
+        console.error('REST update by documentId failed:', restRes.status, txt);
+        
+        // Last resort: try to find by slug if id looks like a slug
+        if (id.includes('-')) {
+          const searchRes = await fetch(
+            `${STRAPI_URL}/api/products?filters[slug][$eq]=${encodeURIComponent(id)}&pagination[pageSize]=1`,
+            {
+              headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
+              cache: 'no-store',
+            }
+          );
+          
+          if (searchRes.ok) {
+            const searchJson = await searchRes.json();
+            const found = searchJson?.data?.[0];
+            if (found && found.id) {
+              const retryRes = await fetch(`${STRAPI_URL}/api/products/${found.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${STRAPI_TOKEN}`,
+                },
+                body: JSON.stringify({ data: processedData }),
+              });
+              
+              if (retryRes.ok) {
+                const retryJson = await retryRes.json();
+                return NextResponse.json(retryJson?.data || retryJson, { status: 200 });
+              }
+            }
+          }
+        }
+        
+        return NextResponse.json(
+          { error: `Failed to update product via REST: ${restRes.status} ${txt}` },
+          { status: restRes.status }
+        );
+      }
+
+      const restJson = await restRes.json();
+      return NextResponse.json(restJson?.data || restJson, { status: 200 });
     }
 
     const json = await response.json();
     
     if (json.errors) {
-      console.error('GraphQL update errors:', json.errors);
-      return NextResponse.json(
-        { error: 'GraphQL update failed', details: json.errors },
-        { status: 400 }
-      );
+      console.warn('GraphQL update errors, attempting REST fallback...', json.errors);
+      
+      // Try to update via REST API directly with documentId
+      const restRes = await fetch(`${STRAPI_URL}/api/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${STRAPI_TOKEN}`,
+        },
+        body: JSON.stringify({ data: processedData }),
+      });
+      
+      if (!restRes.ok) {
+        const txt = await restRes.text();
+        console.error('REST update by documentId failed after GraphQL errors:', restRes.status, txt);
+        
+        // Last resort: try to find by slug if id looks like a slug
+        if (id.includes('-')) {
+          const searchRes = await fetch(
+            `${STRAPI_URL}/api/products?filters[slug][$eq]=${encodeURIComponent(id)}&pagination[pageSize]=1`,
+            {
+              headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
+              cache: 'no-store',
+            }
+          );
+          
+          if (searchRes.ok) {
+            const searchJson = await searchRes.json();
+            const found = searchJson?.data?.[0];
+            if (found && found.id) {
+              const retryRes = await fetch(`${STRAPI_URL}/api/products/${found.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${STRAPI_TOKEN}`,
+                },
+                body: JSON.stringify({ data: processedData }),
+              });
+              
+              if (retryRes.ok) {
+                const retryJson = await retryRes.json();
+                return NextResponse.json(retryJson?.data || retryJson, { status: 200 });
+              }
+            }
+          }
+        }
+        
+        return NextResponse.json(
+          { error: `GraphQL failed and REST update failed: ${restRes.status} ${txt}` },
+          { status: restRes.status }
+        );
+      }
+      
+      const restJson = await restRes.json();
+      return NextResponse.json(restJson?.data || restJson, { status: 200 });
     }
 
     return NextResponse.json(json.data.updateProduct, { status: 200 });

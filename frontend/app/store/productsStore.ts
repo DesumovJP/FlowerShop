@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface Product {
   documentId: string;
@@ -53,82 +52,83 @@ interface ProductsStore {
   getProductsByColor: (color: string) => Product[];
 }
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// Для адмінки не використовуємо кешування - завжди актуальні дані
+const CACHE_DURATION = 0; // Немає кешування для адмінки
 
 export const useProductsStore = create<ProductsStore>()(
-  persist(
-    (set, get) => ({
-      products: [],
-      loading: false,
-      lastFetch: null,
-      error: null,
+  // Прибрано persist middleware - дані не зберігаються в localStorage
+  (set, get) => ({
+    products: [],
+    loading: false,
+    lastFetch: null,
+    error: null,
 
-      setProducts: (products) => set({ products, lastFetch: Date.now() }),
+    setProducts: (products) => set({ products, lastFetch: Date.now() }),
+    
+    setLoading: (loading) => set({ loading }),
+    
+    setError: (error) => set({ error }),
+    
+    fetchProducts: async (force = false) => {
+      const { loading } = get();
       
-      setLoading: (loading) => set({ loading }),
+      // Для адмінки завжди завантажуємо дані (немає кешування)
+      if (loading) {
+        return;
+      }
       
-      setError: (error) => set({ error }),
+      set({ loading: true, error: null });
       
-      fetchProducts: async (force = false) => {
-        const { lastFetch, loading } = get();
+      try {
+        console.log('🛒 Store: Fetching products from API (no cache)...');
+        // Використовуємо адмін endpoint, який не фільтрує по publishedAt
+        const response = await fetch('/api/admin/products?page=1&pageSize=1000', { 
+          cache: 'no-store',
+          next: { revalidate: 0 } // Завжди оновлюємо дані
+        });
         
-        // Check if we need to fetch (cache expired or no data)
-        const now = Date.now();
-        const shouldFetch = force || !lastFetch || (now - lastFetch) > CACHE_DURATION || get().products.length === 0;
-        
-        if (!shouldFetch || loading) {
-          return;
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        set({ loading: true, error: null });
+        const data = await response.json();
+        const products = data.data || [];
         
-        try {
-          console.log('🛒 Store: Fetching products from API...');
-          // Використовуємо адмін endpoint, який не фільтрує по publishedAt
-          const response = await fetch('/api/admin/products?page=1&pageSize=1000', { cache: 'no-store' });
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          const products = data.data || [];
-          
-          console.log('🛒 Store: API response:', {
-            status: response.status,
-            dataLength: products.length,
-            firstProduct: products[0] ? {
-              name: products[0].name,
-              documentId: products[0].documentId,
-              slug: products[0].slug,
-              productType: products[0].productType
-            } : null
-          });
-          
-          set({ 
-            products, 
-            loading: false, 
-            lastFetch: Date.now(),
-            error: null 
-          });
-          
-          console.log('📦 Products loaded and cached:', products.length);
-        } catch (error) {
-          console.error('❌ Error fetching products:', error);
-          set({ 
-            loading: false, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-          });
-        }
-      },
+        console.log('🛒 Store: API response:', {
+          status: response.status,
+          dataLength: products.length,
+          firstProduct: products[0] ? {
+            name: products[0].name,
+            documentId: products[0].documentId,
+            slug: products[0].slug,
+            productType: products[0].productType
+          } : null
+        });
+        
+        set({ 
+          products, 
+          loading: false, 
+          lastFetch: Date.now(),
+          error: null 
+        });
+        
+        console.log('📦 Products loaded (no cache):', products.length);
+      } catch (error) {
+        console.error('❌ Error fetching products:', error);
+        set({ 
+          loading: false, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+    },
 
-      // Force refresh convenience
-      refreshProducts: async () => {
-        await get().fetchProducts(true);
-      },
+    // Force refresh convenience
+    refreshProducts: async () => {
+      await get().fetchProducts(true);
+    },
 
-      // Invalidate cache timestamp without dropping products
-      invalidateCache: () => set({ lastFetch: null }),
+    // Invalidate cache timestamp without dropping products
+    invalidateCache: () => set({ lastFetch: null }),
       
       addProduct: (product) => set((state) => ({
         products: [...state.products, product]
@@ -170,13 +170,5 @@ export const useProductsStore = create<ProductsStore>()(
       getProductsByColor: (color) => {
         return get().products.filter(product => product.color === color);
       },
-    }),
-    {
-      name: 'products-store',
-      partialize: (state) => ({
-        products: state.products,
-        lastFetch: state.lastFetch,
-      }),
-    }
-  )
+    })
 );

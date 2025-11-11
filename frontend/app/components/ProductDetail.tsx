@@ -57,7 +57,7 @@ type GqlProduct = {
   name: string;
   slug: string;
   price: number;
-  productType: 'bouquet' | 'singleflower';
+  productType: 'bouquet' | 'singleflower' | 'composition' | 'else';
   description?: string;
   cardType: 'standard' | 'large';
   color?: string;
@@ -685,50 +685,53 @@ export default function ProductDetail({ productId }: { productId: string }) {
                     </Box>
                   )}
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontWeight: 600,
-                      mb: { xs: 1.5, md: 2 },
-                      color: 'text.primary',
-                      fontFamily: 'var(--font-inter)',
-                      fontSize: { xs: '0.95rem', md: '1rem' },
-                      letterSpacing: '0.01em',
-                    }}
-                  >
-                    Сорти в букеті
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
-                    {data.varieties?.map((variety) => (
-                      <Link key={variety.documentId} href={`/catalog?variety=${encodeURIComponent(variety.name)}`} style={{ textDecoration: 'none' }}>
-                        <Box
-                          sx={{
-                            px: 2.5,
-                            py: 1.25,
-                            borderRadius: 0,
-                            border: '2px solid',
-                            borderColor: 'primary.main',
-                            color: 'primary.main',
-                            backgroundColor: 'background.default',
-                            fontSize: '0.9rem',
-                            fontWeight: 600,
-                            fontFamily: 'var(--font-inter)',
-                            textTransform: 'none',
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              borderWidth: 2,
-                              backgroundColor: 'primary.main',
-                              color: 'background.default',
-                            },
-                          }}
-                        >
-                          {variety.name}
-                        </Box>
-                      </Link>
-                    ))}
-                  </Box>
-                </Grid>
+                {/* Показуємо "Сорт" тільки для товарів, які не є категорією "інші" */}
+                {data.productType !== 'else' && (
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 600,
+                        mb: { xs: 1.5, md: 2 },
+                        color: 'text.primary',
+                        fontFamily: 'var(--font-inter)',
+                        fontSize: { xs: '0.95rem', md: '1rem' },
+                        letterSpacing: '0.01em',
+                      }}
+                    >
+                      Сорт
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25 }}>
+                      {data.varieties?.map((variety) => (
+                        <Link key={variety.documentId} href={`/catalog?variety=${encodeURIComponent(variety.name)}`} style={{ textDecoration: 'none' }}>
+                          <Box
+                            sx={{
+                              px: 2.5,
+                              py: 1.25,
+                              borderRadius: 0,
+                              border: '2px solid',
+                              borderColor: 'primary.main',
+                              color: 'primary.main',
+                              backgroundColor: 'background.default',
+                              fontSize: '0.9rem',
+                              fontWeight: 600,
+                              fontFamily: 'var(--font-inter)',
+                              textTransform: 'none',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                borderWidth: 2,
+                                backgroundColor: 'primary.main',
+                                color: 'background.default',
+                              },
+                            }}
+                          >
+                            {variety.name}
+                          </Box>
+                        </Link>
+                      ))}
+                    </Box>
+                  </Grid>
+                )}
               </Grid>
 
               {/* Delivery and Availability */}

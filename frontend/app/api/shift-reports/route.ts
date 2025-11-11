@@ -40,12 +40,11 @@ export async function GET(request: NextRequest) {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-
-    // Додаємо токен тільки якщо він є
+    // Додаємо токен якщо він присутній (уникаємо 401 коли публічний доступ закритий)
     if (STRAPI_TOKEN) {
       headers['Authorization'] = `Bearer ${STRAPI_TOKEN}`;
     }
-    
+
     const response = await fetch(url, {
       headers,
       cache: 'no-store',

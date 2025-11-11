@@ -297,19 +297,6 @@ export default function CartContent() {
               )}
               </Box>
             </Card>
-
-            {/* Кнопка очищення кошика */}
-            {items.length > 0 && (
-              <Button 
-                onClick={clearLocalStorage}
-                variant="outlined"
-                color="error"
-                size="small"
-                sx={{ mt: 2 }}
-              >
-                Очистити кошик
-              </Button>
-            )}
           </Grid>
 
           {/* Right Section - Total */}

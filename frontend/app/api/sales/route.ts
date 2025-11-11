@@ -25,36 +25,92 @@ export async function POST(request: NextRequest) {
     const results: Array<{ documentId: string; before: number; after: number }> = [];
 
     for (const item of items) {
-      // 1) Fetch current product to read availableQuantity
-      const getRes = await fetch(`${STRAPI_URL}/api/products/${item.documentId}?populate=*`, {
-        headers: {
-          Authorization: `Bearer ${STRAPI_TOKEN}`,
-        },
-        cache: 'no-store',
-      });
+      // Resolve product by documentId (preferred) or slug (fallback) to get numeric id
+      let product: any = null;
+      let numericId: string | null = null;
 
-      if (!getRes.ok) {
-        const text = await getRes.text();
-        console.error('Failed to read product', item.documentId, text);
+      // Try by documentId
+      const restRes = await fetch(
+        `${STRAPI_URL}/api/products?filters[documentId][$eq]=${encodeURIComponent(item.documentId)}&pagination[pageSize]=1`,
+        { headers: { Authorization: `Bearer ${STRAPI_TOKEN}` }, cache: 'no-store' }
+      );
+      if (restRes.ok) {
+        const restJson = await restRes.json();
+        const found = restJson?.data?.[0];
+        if (found) {
+          product = found.attributes || found;
+          numericId = found.id;
+        }
+      }
+
+      // Fallback: try slug equals provided value
+      if (!product || !numericId) {
+        const slugRes = await fetch(
+          `${STRAPI_URL}/api/products?filters[slug][$eq]=${encodeURIComponent(item.documentId)}&pagination[pageSize]=1`,
+          { headers: { Authorization: `Bearer ${STRAPI_TOKEN}` }, cache: 'no-store' }
+        );
+        if (slugRes.ok) {
+          const slugJson = await slugRes.json();
+          const found = slugJson?.data?.[0];
+          if (found) {
+            product = found.attributes || found;
+            numericId = found.id;
+          }
+        }
+      }
+
+      if (!product || !numericId) {
+        console.error('Failed to resolve product by documentId or slug:', item.documentId);
         return NextResponse.json(
           { error: `Failed to read product ${item.documentId}` },
-          { status: getRes.status }
+          { status: 404 }
         );
       }
 
-      const productData = await getRes.json();
-      const before = productData?.data?.availableQuantity ?? 0;
-      const after = Math.max(0, before - item.quantity);
+      const before = Number(product.availableQuantity ?? 0);
+      const after = Math.max(0, before - Number(item.quantity || 0));
 
-      // 2) Update product quantity
-      const putRes = await fetch(`${STRAPI_URL}/api/products/${item.documentId}`, {
-        method: 'PUT',
+      // Try GraphQL update by documentId first
+      const updateMutation = `
+        mutation UpdateProduct($documentId: ID!, $availableQuantity: Int!) {
+          updateProduct(documentId: $documentId, data: { availableQuantity: $availableQuantity }) {
+            documentId
+            availableQuantity
+          }
+        }
+      `;
+
+      let putRes: Response | null = null;
+      const gqlRes = await fetch(`${STRAPI_URL}/graphql`, {
+        method: 'POST',
         headers: {
+          'Authorization': `Bearer ${STRAPI_TOKEN}`,
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${STRAPI_TOKEN}`,
         },
-        body: JSON.stringify({ data: { availableQuantity: after } }),
+        body: JSON.stringify({ 
+          query: updateMutation, 
+          variables: { documentId: item.documentId, availableQuantity: after } 
+        }),
       });
+
+      if (gqlRes.ok) {
+        const gqlJson = await gqlRes.json();
+        if (gqlJson?.data?.updateProduct) {
+          putRes = new Response(JSON.stringify({ data: gqlJson.data.updateProduct }), { status: 200 });
+        }
+      }
+
+      // Fallback to REST by numeric id
+      if (!putRes) {
+        putRes = await fetch(`${STRAPI_URL}/api/products/${numericId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${STRAPI_TOKEN}`,
+          },
+          body: JSON.stringify({ data: { availableQuantity: after } }),
+        });
+      }
 
       if (!putRes.ok) {
         const text = await putRes.text();

@@ -46,8 +46,8 @@
         "chervonij",
         "rozhevyj",
         "bilyj",
-        "zhyovtyj ",
-        "fioletovij ",
+        "zhyovtyj",
+        "fioletovij",
         "oranzhevyj",
         "synij",
         "zelenyj",
@@ -68,6 +68,7 @@
       "enum": [
         "bouquet",
         "singleflower",
+        "composition",
         "else"
       ]
     },

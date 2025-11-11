@@ -47,6 +47,7 @@ import {
   CloudUpload as CloudUploadIcon,
   TextFields as TextFieldsIcon,
   Close as CloseIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { Tooltip } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -165,8 +166,8 @@ function ProductFormDialog({
       'Білий': 'bilyj',
       'Червоний': 'chervonij',
       'Рожевий': 'rozhevyj',
-      'Жовтий': 'zhyovtyj ',
-      'Фіолетовий': 'fioletovij ',
+      'Жовтий': 'zhyovtyj',
+      'Фіолетовий': 'fioletovij',
       'Голубий': 'golubyj',
       'Синій': 'synij',
       'Помаранчевий': 'oranzhevyj'
@@ -177,10 +178,19 @@ function ProductFormDialog({
       'large': 'large'
     };
 
+    // Маппінг productType: accessory -> else (в Strapi)
+    const productTypeMapping: Record<string, string> = {
+      'accessory': 'else',
+      'bouquet': 'bouquet',
+      'singleflower': 'singleflower',
+      'composition': 'composition'
+    };
+
     return {
       ...data,
       color: data.color ? colorMapping[data.color] || data.color : '',
       cardType: data.cardType ? (cardTypeMapping[data.cardType] as any) || 'standart' : 'standart',
+      productType: data.productType ? (productTypeMapping[data.productType] as any) || data.productType : 'bouquet',
     };
   };
 
@@ -190,8 +200,8 @@ function ProductFormDialog({
       'bilyj': 'Білий',
       'chervonij': 'Червоний',
       'rozhevyj': 'Рожевий',
-      'zhyovtyj ': 'Жовтий',
-      'fioletovij ': 'Фіолетовий',
+      'zhyovtyj': 'Жовтий',
+      'fioletovij': 'Фіолетовий',
       'golubyj': 'Голубий',
       'synij': 'Синій',
       'oranzhevyj': 'Помаранчевий'
@@ -202,10 +212,19 @@ function ProductFormDialog({
       'large': 'large'
     };
 
+    // Зворотний маппінг productType: else -> accessory (у формі)
+    const productTypeReverseMapping: Record<string, string> = {
+      'else': 'accessory',
+      'bouquet': 'bouquet',
+      'singleflower': 'singleflower',
+      'composition': 'composition'
+    };
+
     return {
       ...data,
       color: data.color ? colorReverseMapping[data.color] || data.color : '',
       cardType: data.cardType ? cardTypeReverseMapping[data.cardType] || data.cardType : '',
+      productType: data.productType ? (productTypeReverseMapping[data.productType] || data.productType) : 'bouquet',
     };
   };
 
@@ -409,13 +428,16 @@ function ProductFormDialog({
         console.log('Transliterated data:', transliteratedData);
         console.log('Varieties before sending:', transliteratedData.varieties);
         console.log('CardType before sending:', transliteratedData.cardType);
+        console.log('ProductType after transliteration:', transliteratedData.productType);
         
-        // Визначаємо тип продукту - використовуємо formData.productType (вже правильно встановлений)
-        const productType = formData.productType;
+        // Визначаємо тип продукту - використовуємо transliteratedData.productType (вже має маппінг)
+        const strapiProductType = transliteratedData.productType;
+        const originalProductType = formData.productType; // Для перевірки varieties
         
         console.log('🔍 Product type detection:', { 
           isEdit: !!product, 
-          productType, 
+          originalProductType,
+          strapiProductType, 
           formDataProductType: formData.productType,
           hasVarieties: (product?.varieties?.length || 0) > 0 
         });
@@ -425,6 +447,7 @@ function ProductFormDialog({
         const apiEndpoint = isEdit ? `/api/products/${product!.documentId}` : '/api/products';
         
         // Підготовка payload для Product колекції (без documentId у тілі)
+        // Varieties тільки для букетів
         const jsonPayload = {
           name: transliteratedData.name,
           slug: transliteratedData.slug,
@@ -433,8 +456,8 @@ function ProductFormDialog({
           description: transliteratedData.description,
           color: transliteratedData.color,
           cardType: transliteratedData.cardType,
-          productType: productType,
-          varieties: productType === 'bouquet' ? transliteratedData.varieties : [],
+          productType: strapiProductType,
+          varieties: originalProductType === 'bouquet' ? transliteratedData.varieties : [],
         };
         
         console.log('Frontend: Sending JSON payload to:', apiEndpoint, jsonPayload);
@@ -899,8 +922,8 @@ function ProductFormDialog({
                 >
                   <MenuItem value="bouquet">Букет</MenuItem>
                   <MenuItem value="singleflower">Квітка</MenuItem>
-                  <MenuItem value="composition">Композиція</MenuItem>
-                  <MenuItem value="accessory">Аксесуар</MenuItem>
+                  <MenuItem value="composition">Композиції</MenuItem>
+                  <MenuItem value="accessory">Аксесуари</MenuItem>
                 </Select>
               </FormControl>
               
@@ -1780,23 +1803,37 @@ export default function ProductsPage() {
   // Fetch varieties
   const fetchVarieties = async () => {
     try {
-      const response = await fetch('/api/admin/varieties');
-      const data = await response.json();
-      
-      if (response.ok) {
+      // 1) Try admin endpoint (may require token)
+      let response = await fetch('/api/admin/varieties', { cache: 'no-store' });
+      let ok = response.ok;
+      let data: any = {};
+      try { data = await response.json(); } catch {}
+
+      // 2) Fallback to public GraphQL proxy if admin endpoint fails or returns no data
+      if (!ok || !(data?.data?.length > 0)) {
+        response = await fetch('/api/catalog-varieties', { cache: 'no-store' });
+        ok = response.ok;
+        try { data = await response.json(); } catch {}
+      }
+
+      if (ok) {
         setVarieties(data.data || []);
         try { router.refresh(); } catch {}
+      } else {
+        console.error('Failed to fetch varieties (both endpoints).');
       }
     } catch (error) {
       console.error('Error fetching varieties:', error);
     }
   };
 
-  // Завантаження товарів при монтуванні компонента
+  // Завантаження товарів при монтуванні компонента з форсуванням
   useEffect(() => {
-    fetchProducts(true);
+    console.log('🔄 Initial load: Fetching products with force refresh...');
+    invalidateCache(); // Очищаємо кеш перед завантаженням
+    fetchProducts(true); // Примусове оновлення при завантаженні
     fetchVarieties();
-  }, [fetchProducts]);
+  }, [fetchProducts, invalidateCache]);
 
   // Слухаємо події оновлення товарів
   useEffect(() => {
@@ -2019,7 +2056,8 @@ export default function ProductsPage() {
           } catch {}
         } catch {}
 
-        await fetchProducts();
+        invalidateCache();
+        await fetchProducts(true);
         try { router.refresh(); } catch {}
         try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
         showNotification('Списання виконано', 'success');
@@ -2097,7 +2135,8 @@ export default function ProductsPage() {
             } catch (e) {
               console.error('Failed to log write-off activity:', e);
             }
-            await fetchProducts();
+            invalidateCache();
+            await fetchProducts(true);
             try { router.refresh(); } catch {}
             try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
             showNotification('Товар успішно видалено', 'success');
@@ -2148,7 +2187,8 @@ export default function ProductsPage() {
           } catch (e) {
             console.error('Failed to log write-off activity:', e);
           }
-          await fetchProducts();
+          invalidateCache();
+          await fetchProducts(true);
           try { router.refresh(); } catch {}
           try { if (typeof window !== 'undefined') { window.dispatchEvent(new CustomEvent('products:refresh')); } } catch {}
           showNotification('Товар успішно видалено', 'success');
@@ -2338,6 +2378,33 @@ export default function ProductsPage() {
               }}
             >
               🌿 {showVarieties ? 'Сховати сорти' : 'Показати сорти'}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={async () => {
+                invalidateCache();
+                await fetchProducts(true);
+                showNotification('Список товарів оновлено', 'success');
+              }}
+              sx={{
+                borderRadius: '0.75rem',
+                border: '2px solid rgba(46, 125, 50, 0.3)',
+                color: '#2E7D32',
+                backgroundColor: 'rgba(46, 125, 50, 0.05)',
+                backdropFilter: 'blur(10px)',
+                fontWeight: 600,
+                textTransform: 'none',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  border: '2px solid rgba(46, 125, 50, 0.5)',
+                  backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                },
+                minWidth: isMobile ? '100%' : 140,
+                py: 1,
+              }}
+            >
+              🔄 Оновити
             </Button>
             {/* Кнопку "Додати сорт квітів" прибрано — вона дублюється у блоці "Сорти квітів" */}
             <Button
@@ -2868,7 +2935,7 @@ export default function ProductsPage() {
                         label={product.productType === 'bouquet' ? 'Букет' : 
                                product.productType === 'singleflower' ? 'Квітка' : 
                                product.productType === 'composition' ? 'Композиція' : 
-                               product.productType === 'accessory' ? 'Аксесуар' : 'Невідомо'}
+                               product.productType === 'accessory' ? 'Аксесуари' : 'Аксесуари'}
                         size="small"
                         sx={{
                           fontSize: { xs: '0.6rem', sm: '0.7rem', md: '0.75rem' },
@@ -2899,7 +2966,7 @@ export default function ProductsPage() {
                             label={product.productType === 'bouquet' ? 'Букет' : 
                                    product.productType === 'singleflower' ? 'Квітка' : 
                                    product.productType === 'composition' ? 'Композиція' : 
-                                   product.productType === 'accessory' ? 'Аксесуар' : 'Невідомо'}
+                                   product.productType === 'accessory' ? 'Аксесуар' : 'Аксесуари'}
                             size="small"
                             color={product.productType === 'bouquet' ? 'primary' : 
                                    product.productType === 'singleflower' ? 'secondary' : 'default'}
@@ -2954,7 +3021,7 @@ export default function ProductsPage() {
                         ) : (
                           <Grid size={{ xs: 12 }}>
                             <Chip
-                              label="Не вказано"
+                              label="-"
                               size="small"
                               sx={{
                                 backgroundColor: theme.palette.grey[300],
@@ -3042,7 +3109,7 @@ export default function ProductsPage() {
                             fontStyle: 'italic'
                           }}
                         >
-                          Квітка
+                          -
                         </Typography>
                       )}
                     </TableCell>

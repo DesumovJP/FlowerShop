@@ -1,49 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const STRAPI_URL = process.env.STRAPI_URL || 'http://localhost:1337';
-const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
+const STRAPI_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337';
 
-// GraphQL query для всіх продуктів (букети + одиночні квіти)
-const GET_ALL_PRODUCTS_QUERY = `
-  query GetAllProducts {
-    products(pagination: { pageSize: 1000 }, sort: ["createdAt:desc"]) {
-      documentId
-      name
-      slug
-      price
-      availableQuantity
-      productType
-      color
-      description
-      cardType
-      image {
-        documentId
-        url
-        alternativeText
-        width
-        height
-      }
-      varieties {
-        documentId
-        name
-        slug
-      }
-      createdAt
-      updatedAt
-      publishedAt
-    }
-  }
-`;
-
-// GET - Отримати всі продукти для адмінки
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '1000');
-    const productType = searchParams.get('productType');
+    const page = searchParams.get('page') || '1';
+    const pageSize = searchParams.get('pageSize') || '1000';
+    const productType = searchParams.get('productType'); // bouquet, singleflower, composition, else, або null для всіх
     const search = searchParams.get('search');
-    
+
     console.log('🛒 Admin API: Fetching products with params:', {
       page,
       pageSize,
@@ -51,14 +17,73 @@ export async function GET(request: NextRequest) {
       search
     });
 
+    // Будуємо фільтри для GraphQL (аналогічно до публічного API, але БЕЗ фільтрації по publishedAt)
+    const filterConditions = [];
+    
+    if (productType && productType !== 'all') {
+      filterConditions.push(`productType: { eq: "${productType}" }`);
+    }
+    
+    if (search) {
+      filterConditions.push(`name: { contains: "${search}" }`);
+    }
+    
+    // НЕ додаємо фільтр по publishedAt - адмінка має бачити всі товари
+    
+    // Додаємо пагінацію до GraphQL запиту
+    const pageSizeInt = parseInt(pageSize);
+    const pageInt = parseInt(page);
+    const paginationParams = pageSizeInt >= 1000 
+      ? 'pagination: { pageSize: 1000 }' 
+      : `pagination: { page: ${pageInt}, pageSize: ${pageSizeInt} }`;
+    
+    // Будуємо параметри для GraphQL запиту
+    const queryParams = [];
+    if (filterConditions.length > 0) {
+      queryParams.push(`filters: { ${filterConditions.join(', ')} }`);
+    }
+    queryParams.push(paginationParams);
+    
+    const query = `
+      query GetAllProducts {
+        products(${queryParams.join(', ')}) {
+          documentId
+          name
+          slug
+          price
+          availableQuantity
+          productType
+          color
+          description
+          cardType
+          image {
+            documentId
+            url
+            alternativeText
+            width
+            height
+          }
+          varieties {
+            documentId
+            name
+            slug
+          }
+          createdAt
+          updatedAt
+          publishedAt
+        }
+      }
+    `;
+
+    console.log('🛒 Admin API GraphQL query:', query);
+
     const response = await fetch(`${STRAPI_URL}/graphql`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${STRAPI_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        query: GET_ALL_PRODUCTS_QUERY,
+        query,
       }),
     });
 
@@ -68,46 +93,41 @@ export async function GET(request: NextRequest) {
       throw new Error(`GraphQL request failed: ${response.status}`);
     }
 
-    const result = await response.json();
-    
-    if (result.errors) {
-      console.error('❌ GraphQL errors:', result.errors);
-      throw new Error(`GraphQL errors: ${JSON.stringify(result.errors)}`);
+    const data = await response.json();
+    console.log('🛒 Admin API GraphQL response:', data);
+
+    if (data.errors) {
+      console.error('❌ GraphQL errors:', data.errors);
+      throw new Error(`GraphQL errors: ${JSON.stringify(data.errors)}`);
     }
 
-    let products = result.data.products || [];
+    const products = data.data.products || [];
     
-    // Фільтрація за типом продукту
-    if (productType && productType !== 'all') {
-      products = products.filter((product: any) => product.productType === productType);
+    // Якщо pageSize великий (>= 1000), повертаємо всі товари без пагінації
+    let paginatedProducts = products;
+    let total = products.length;
+    let pageCount = 1;
+    
+    // Застосовуємо пагінацію тільки якщо pageSize менше 1000
+    if (pageSizeInt < 1000) {
+      const startIndex = (pageInt - 1) * pageSizeInt;
+      const endIndex = startIndex + pageSizeInt;
+      paginatedProducts = products.slice(startIndex, endIndex);
+      pageCount = Math.ceil(total / pageSizeInt);
     }
-    
-    // Фільтрація за пошуком
-    if (search) {
-      products = products.filter((product: any) => 
-        product.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-    
-    // Простий пагінація на фронтенді
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedProducts = products.slice(startIndex, endIndex);
-    const total = products.length;
-    const pageCount = Math.ceil(total / pageSize);
 
     console.log('🛒 Admin API: Returning products:', {
       total,
       returned: paginatedProducts.length,
-      page,
+      page: pageInt,
       pageCount
     });
 
     return NextResponse.json({
       data: paginatedProducts,
       pagination: {
-        page,
-        pageSize,
+        page: pageInt,
+        pageSize: pageSizeInt,
         pageCount,
         total
       }

@@ -58,8 +58,7 @@ export async function GET(request: NextRequest) {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-
-    // Додаємо токен тільки якщо він є
+    // Додаємо токен якщо він присутній у середовищі (уникаємо 401 на приватних інстансах)
     if (STRAPI_TOKEN) {
       headers['Authorization'] = `Bearer ${STRAPI_TOKEN}`;
     }
